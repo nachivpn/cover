@@ -1,0 +1,7 @@
+name: cover
+depend:
+  -- agda-2.7.0
+  standard-library-2.0
+  frames
+include :
+  src
