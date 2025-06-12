@@ -25,18 +25,18 @@ private
 ⊆-trans-unit-right (keep w)  = cong keep (⊆-trans-unit-right w)
 
 -- weakening composition is associative
-∙-assoc : {Γ1 Γ2 Γ3 Γ4 : Ctx} → (w3 : Γ4 ⊆ Γ3) (w2 : Γ3 ⊆ Γ2) → (w1 : Γ2 ⊆ Γ1)
+⊆-trans-assoc : {Γ1 Γ2 Γ3 Γ4 : Ctx} → (w3 : Γ4 ⊆ Γ3) (w2 : Γ3 ⊆ Γ2) → (w1 : Γ2 ⊆ Γ1)
   → (w3 ∙ w2) ∙ w1 ≡ w3 ∙ (w2 ∙ w1)
-∙-assoc w3         w2         base       = refl
-∙-assoc w3         w2         (drop w1)  = cong drop (∙-assoc w3 w2 w1)
-∙-assoc w3         (drop w2)  (keep w1)  = cong drop (∙-assoc w3 w2 w1)
-∙-assoc (drop w3)  (keep w2)  (keep w1)  = cong drop (∙-assoc w3 w2 w1)
-∙-assoc (keep w3)  (keep w2)  (keep w1)  = cong keep (∙-assoc w3 w2 w1)
+⊆-trans-assoc w3         w2         base       = refl
+⊆-trans-assoc w3         w2         (drop w1)  = cong drop (⊆-trans-assoc w3 w2 w1)
+⊆-trans-assoc w3         (drop w2)  (keep w1)  = cong drop (⊆-trans-assoc w3 w2 w1)
+⊆-trans-assoc (drop w3)  (keep w2)  (keep w1)  = cong drop (⊆-trans-assoc w3 w2 w1)
+⊆-trans-assoc (keep w3)  (keep w2)  (keep w1)  = cong keep (⊆-trans-assoc w3 w2 w1)
 
 𝒲 : IFrame Ctx _⊆_
 𝒲 = record
       { ⊆-trans           = _∙_
-      ; ⊆-trans-assoc     = ∙-assoc
+      ; ⊆-trans-assoc     = ⊆-trans-assoc
       ; ⊆-refl            = ⊆-refl
       ; ⊆-trans-unit-left = ⊆-trans-unit-left
       ; ⊆-trans-unit-right  = ⊆-trans-unit-right

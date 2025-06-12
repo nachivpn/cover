@@ -3,7 +3,7 @@
 module Instances.AbelS19 where
 
 open import Data.Product
-  using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂)
+  using (Σ; ∃; ∃₂; _×_; _,_; -,_ ; proj₁ ; proj₂)
 
 open import Relation.Binary.PropositionalEquality using (_≡_)
   renaming (refl to ≡-refl ; sym to ≡-sym ; trans to ≡-trans
@@ -63,10 +63,10 @@ wkNe-pres-trans i i' (var x) = ≡-cong var (wkVar-pres-⊆-trans i i' x)
 
 open import Frame.CFrame 𝒲
 
--- "Cover monad" in AbelS19
+-- "Cover monad" in AbelS19 (in Section 2.3)
 data 𝒞 (A : Ctx → Set) : Ctx → Set where
   return : A Γ → 𝒞 A Γ
-  false  : Ne Γ 𝟘 → 𝒞 A Γ
+  abort  : Ne Γ 𝟘 → 𝒞 A Γ
   case   : Ne Γ (a + b) → 𝒞 A (Γ `, a) → 𝒞 A (Γ `, b) → 𝒞 A Γ
 
 --
@@ -168,12 +168,35 @@ Cov .family (leaf Γ)         here              = ⊆-refl
 Cov .family (branch n k1 k2) (left x)  = freshWk ∙ Cov .family k1 x
 Cov .family (branch n k1 k2) (right y) = freshWk ∙ Cov .family k2 y
 
-Id : Identity CF
-Id = record { idK[_] = leaf ; id∈ = λ { here → ≡-refl } }
+PCF : Pointed CF
+PCF = record { pointK[_] = leaf ; point∈ = λ { here → ≡-refl } }
 
--- imports USet, Cover' (the derived cover monad), etc.
-open import USet.Base 𝒲 𝒦 (λ Δ k → Δ ∈ k) CF
-open Pointed Id
+transK : (k : K Γ) → ForAllW k K → K Γ
+transK (leaf _)        f = f here
+transK (dead x)        f = dead x
+transK (branch x k k') f = branch x (transK k (f ∘ left)) (transK k' (f ∘ right))
+
+trans∈ : (k : K Γ) (f : ForAllW k K)
+  → ForAllW (transK k f) (λ v' → ∃₂ λ v (p : v ∈ k) → v' ∈ f p)
+trans∈ (leaf Γ)        f p
+  = Γ , here , p
+trans∈ (dead x)        f ()
+trans∈ (branch x k k') f (left p)  =
+  let (vl , p' , pl) = trans∈ k (f ∘ left) p
+  in vl , left p' , pl
+trans∈ (branch x k k') f (right p) =
+  let (vl , p' , pr) = trans∈ k' (f ∘ right) p
+  in vl , right p' , pr
+
+JCF : Joinable CF
+JCF = record
+  { joinK = transK
+  ; join∈ = trans∈
+  }
+
+open import USet.Base 𝒲 𝒦 (λ Δ k → Δ ∈ k) CF -- USet, Cover'. etc.
+open Return PCF -- return'
+open Join JCF -- join'
 
 module Equiv where
 
@@ -182,12 +205,12 @@ module Equiv where
     where
     wk𝒞 : Γ ⊆ Γ' → 𝒞 (A ₀_) Γ → 𝒞 (A ₀_) Γ'
     wk𝒞 i (return x) = return (wk A i x)
-    wk𝒞 i (false x) = false (wkNe i x)
+    wk𝒞 i (abort x) = abort (wkNe i x)
     wk𝒞 i (case x m m') = case (wkNe i x) (wk𝒞 (keep i) m) (wk𝒞 (keep i) m')
 
   to : {A : USet} → 𝒞' A →̇ Cover' A
   to {A} .apply (return {Γ} x) = leaf Γ , λ { here → x }
-  to {A} .apply (false x)      = dead x , λ { () }
+  to {A} .apply (abort x)      = dead x , λ { () }
   to {A} .apply (case x m m')  = let
     (k , f)   = to {A} .apply m
     (k' , f') = to {A} .apply m'
@@ -198,7 +221,7 @@ module Equiv where
 
   fromAux : {A : USet} {Γ : Ctx} → (k : K Γ) (f : ForAllW k (A ₀_)) → 𝒞 (A ₀_) Γ
   fromAux {A} (leaf Γ)        f = return (f {Γ} here)
-  fromAux {A} (dead x)        f = false x
+  fromAux {A} (dead x)        f = abort x
   fromAux {A} (branch x k k') f = case x (fromAux {A} k (f ∘ left)) (fromAux {A} k' (f ∘ right))
 
   from : {A : USet} → Cover' A →̇ 𝒞' A
@@ -223,7 +246,7 @@ inr' : Nf' b →̇ Nf' (a + b)
 inr' .apply = inr
 
 ⟦_⟧ : Ty → USet
-⟦ 𝕓 ⟧     = Nf' 𝕓
+⟦ 𝕓 ⟧     = Cover' (Ne' 𝕓)
 ⟦ 𝟘 ⟧     = Cover' (Ne' 𝟘)
 ⟦ a + b ⟧ = Cover' (⟦ a ⟧ ⊎' ⟦ b ⟧)
 
@@ -242,11 +265,16 @@ register+ .apply n = (branch n (leaf _) (leaf _)) , λ
   }
 
 reify : ∀ a → ⟦ a ⟧ →̇ Nf' a
-reify 𝕓       = id'
+reify 𝕓       = collect ∘' (mapCover' emb')
 reify 𝟘       = collect ∘' (mapCover' init')
 reify (a + b) = collect ∘'  mapCover' [ inl' ∘' reify a  , inr' ∘' reify b ]'
 
 reflect : ∀ a → Ne' a →̇ ⟦ a ⟧
-reflect 𝕓       = emb'
+reflect 𝕓       = return'
 reflect 𝟘       = return'
 reflect (a + b) = mapCover' [ inj₁' ∘' reflect a ,  inj₂' ∘' reflect b ]' ∘' register+
+
+run : ∀ a → Cover' ⟦ a ⟧ →̇ ⟦ a ⟧
+run 𝕓       = join' {Ne' 𝕓}
+run 𝟘       = join' {Ne' 𝟘}
+run (a + b) = join' {⟦ a ⟧ ⊎' ⟦ b ⟧}

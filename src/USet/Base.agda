@@ -103,8 +103,28 @@ module _ {A B : USet} (run : {w : W} (k : K w) (f : ForAllW k (A ₀_)) → B �
   runCover : Cover' A →̇ B
   runCover .apply (k , f) = run k f
 
-module Pointed (Id : Identity CF) where
-  open Identity Id
+module Return (PCF : Pointed CF) where
+  open Pointed PCF
 
   return' : {A : USet} → A →̇ Cover' A
-  return' {A} .apply {w} x = idK[ w ] , λ v → subst (A ₀_) (id∈ v) x
+  return' {A} .apply {w} x = pointK[ w ] , λ v → subst (A ₀_) (point∈ v) x
+
+module Join (JCF : Joinable CF) where
+  open Joinable JCF
+
+  join' : {A : USet} → Cover' (Cover' A) →̇ Cover' A
+  join' {A} .apply {w} (k , f) = joinK k (proj₁ ∘ f) , λ e →
+    let _ , e₁ , e₂ = join∈ k (proj₁ ∘ f) e
+    in  f e₁ .proj₂ e₂
+
+module Extract (CPCF : CoPointed CF) where
+  open CoPointed CPCF
+
+  extract' : {A : USet} → Cover' A →̇ A
+  extract' {A} .apply {w} (k , f) = f (copoint∈ k)
+
+module Cojoin (CJCF : CoJoinable CF) where
+  open CoJoinable CJCF
+
+  cojoin' : {A : USet} → Cover' A →̇ Cover' (Cover' A)
+  cojoin' {A} .apply {w} (k , f) = k , λ p → cojoinK k p , λ p' → f (cojoin∈ k p p')

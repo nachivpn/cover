@@ -136,8 +136,8 @@ Cov : Coverage CF
 Cov .family (single Γ) here      = ⊆-refl
 Cov .family (cons n k) (there x) = freshWk ∙ Cov .family k x
 
-Id : Identity CF
-Id = record { idK[_] = single ; id∈ = λ { here → ≡-refl } }
+Id : Pointed CF
+Id = record { pointK[_] = single ; point∈ = λ { here → ≡-refl } }
 
 -- imports USet, Cover' (the derived cover monad), etc.
 open import USet.Base 𝒲 𝒦 (λ Δ k → Δ ∈ k) CF
