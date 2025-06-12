@@ -23,7 +23,7 @@ open import Relation.Binary.PropositionalEquality.Properties
   using () renaming (isEquivalence to ≡-equiv)
 
 open import Data.Product
-  using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂)
+  using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂ ; uncurry)
 
 private
   variable
@@ -101,7 +101,7 @@ mapCover' f .apply (k , g) = k , f .apply ∘ g
 module _ {A B : USet} (run : {w : W} (k : K w) (f : ForAllW k (A ₀_)) → B ₀ w) where
 
   runCover : Cover' A →̇ B
-  runCover .apply (k , f) = run k f
+  runCover .apply = uncurry run
 
 module Return (PCF : Pointed CF) where
   open Pointed PCF

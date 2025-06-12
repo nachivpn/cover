@@ -1,6 +1,7 @@
 {-# OPTIONS --safe #-}
 
-module Instances.DualContextIK where
+-- Dual Context K calculus
+module Instances.DK where
 
 open import Data.Product
   using (Σ; ∃; ∃₂; _×_; _,_; -,_ ; proj₁ ; proj₂ ; curry ; uncurry)
@@ -28,18 +29,18 @@ private
 open import Context Ty
 
 data _⨾_⊢_ (Δ Γ : Ctx) : Ty → Set where
-    var   : (x : Var Γ a) → Δ ⨾ Γ ⊢ a
-    box   : (t : [] ⨾ Δ ⊢ a) →  Δ ⨾ Γ ⊢ (◻ a)
-    letin : (t : Δ ⨾ Γ ⊢ (◻ a)) → (u : (Δ `, a) ⨾ Γ ⊢ b) →  Δ ⨾ Γ ⊢ b
+  var   : (x : Var Γ a) → Δ ⨾ Γ ⊢ a
+  box   : (t : [] ⨾ Δ ⊢ a) →  Δ ⨾ Γ ⊢ (◻ a)
+  letin : (t : Δ ⨾ Γ ⊢ (◻ a)) → (u : (Δ `, a) ⨾ Γ ⊢ b) →  Δ ⨾ Γ ⊢ b
 
 mutual
-   data _⨾_⊢Ne_ (Δ Γ : Ctx) : Ty → Set where
-     var : Var Γ a → Δ ⨾ Γ ⊢Ne a
+  data _⨾_⊢Ne_ (Δ Γ : Ctx) : Ty → Set where
+    var : Var Γ a → Δ ⨾ Γ ⊢Ne a
 
-   data _⨾_⊢Nf_ (Δ Γ : Ctx) : Ty → Set where
-     up    : Δ ⨾ Γ ⊢Ne 𝕓 → Δ ⨾ Γ ⊢Nf 𝕓
-     box   : [] ⨾ Δ ⊢Nf a → Δ ⨾ Γ ⊢Nf ◻ a
-     letin : Δ ⨾ Γ ⊢Ne ◻ a → Δ `, a ⨾ Γ ⊢Nf ◻ b → Δ ⨾ Γ ⊢Nf ◻ b
+  data _⨾_⊢Nf_ (Δ Γ : Ctx) : Ty → Set where
+    up    : Δ ⨾ Γ ⊢Ne 𝕓 → Δ ⨾ Γ ⊢Nf 𝕓
+    box   : [] ⨾ Δ ⊢Nf a → Δ ⨾ Γ ⊢Nf ◻ a
+    letin : Δ ⨾ Γ ⊢Ne ◻ a → Δ `, a ⨾ Γ ⊢Nf ◻ b → Δ ⨾ Γ ⊢Nf ◻ b
 
 wkNe : Δ ⊆ Δ' → Γ ⊆ Γ' → Δ ⨾ Γ ⊢Ne a → Δ' ⨾ Γ' ⊢Ne a
 wkNe _ i (var x) = var (wkVar i x)
