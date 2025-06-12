@@ -164,7 +164,52 @@ _∈_ : Ctx₂ → ∀ {Χ} → K₂ Χ → Set
 
 open {-CF.-}Core 𝒦 _∈_
 
-open import USet.Base 𝒲₂ 𝒦 _∈_ {!!}
+factor : (i1 : Δ ⊆ Δ') (i2 : Γ ⊆ Γ') (k : K Δ Γ)
+  → k ⊆k wkK i1 i2 k
+factor i1 i2 (single _ _) here      = _ , here , base , i1
+factor i1 i2 (cons x k)   (there p) =
+  let (_ , p' , i1' , i2') = factor (keep i1) i2 k p
+  in _ , there p' , i1' , i2'
+
+factor-pres-refl : (k : K Δ Γ) → factor ⊆-refl ⊆-refl k ≋ ⊆k-refl[ k ]'
+factor-pres-refl (single _ _) here
+  = ≡-refl
+factor-pres-refl (cons x k)   (there p)
+  rewrite factor-pres-refl k p
+  | wkNe-pres-refl x
+  | wkK-pres-refl k
+  = ≡-refl
+
+factor-pres-trans : (i1 : Δ ⊆ Δ') (i2 : Γ ⊆ Γ') (i1' : Δ' ⊆ Δ'') (i2' : Γ' ⊆ Γ'') (k : K Δ Γ)
+  → factor (⊆-trans i1 i1') (⊆-trans i2 i2') k
+    ≋ ⊆k-trans' {i = i1 , i2} {i' = i1' , i2'} k (factor i1 i2 k) (factor i1' i2' (wkK i1 i2 k))
+factor-pres-trans i1 i2 i1' i2' (single _ _) here
+  = ≡-refl
+factor-pres-trans i1 i2 i1' i2' (cons n k) (there p)
+  rewrite factor-pres-trans (keep i1) i2 (keep i1') i2' k p
+    | wkNe-pres-trans i1 i2 i1' i2' n
+    | wkK-pres-trans (keep i1) (keep i1') i2 i2' k
+  = ≡-refl
+
+factor₂ : (i : Χ ⊆₂ Χ') (k : K₂ Χ) → k ⊆k wkK₂ i k
+factor₂ = uncurry factor
+
+factor₂-pres-refl : (k : K₂ Χ) → factor₂ ⊆₂-refl k ≋ ⊆k-refl[ k ]'
+factor₂-pres-refl k = factor-pres-refl k
+
+factor₂-pres-trans : (i : Χ ⊆₂ Χ') (i' : Χ' ⊆₂ Χ'') (k : K₂ Χ)
+  → factor₂ (⊆₂-trans i i') k
+    ≋ ⊆k-trans' {i = i} {i' = i'} k (factor₂ i k) (factor₂ i' (wkK₂ i k))
+factor₂-pres-trans (i1 , i2) (i1' , i2') k = factor-pres-trans i1 i2 i1' i2' k
+
+CF : CFrame
+CF = record
+  { factor            = factor₂
+  ; factor-pres-refl  = factor₂-pres-refl
+  ; factor-pres-trans = factor₂-pres-trans
+  }
+
+open import USet.Base 𝒲₂ 𝒦 _∈_ CF
 
 module Equiv where
 
