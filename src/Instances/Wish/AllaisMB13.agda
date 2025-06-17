@@ -26,31 +26,46 @@ private
 
 open import Context Ty
 
-data Ne : Ctx → Ty → Set where
-  var  : Var Γ a → Ne Γ a
---  fold : Nf ((Γ `, a) `, b) b → Nf Γ b → Ne Γ (𝕃 a) → Ne Γ b
+≡-cong₃ :
+  {A A' A'' : Set} {B : Set}
+  (f : A → A' → A'' → B)
+  {x y : A} {x' y' : A'} {x'' y'' : A''}
+  (p : x ≡ y) (q : x' ≡ y') (r : x'' ≡ y'')
+  → ---------------------
+  f x x' x'' ≡ f y y' y''
+≡-cong₃ _ ≡-refl ≡-refl ≡-refl = ≡-refl
 
-data Nf : Ctx → Ty → Set where
-  emb   : Ne Γ 𝕓 → Nf Γ 𝕓
-  nil   : Nf Γ (𝕃 b)
-  cons  : Nf Γ b → Nf Γ (𝕃 b) → Nf Γ (𝕃 b)
-  mapp  : Nf (Γ `, a) b → Ne Γ (𝕃 a) → Nf Γ (𝕃 b) → Nf Γ (𝕃 b)
+mutual
+  data Ne : Ctx → Ty → Set where
+    var  : Var Γ a → Ne Γ a
+    fold : Nf ((Γ `, a) `, b) b → Nf Γ b → Ne Γ (𝕃 a) → Ne Γ b
 
-wkNe : Γ ⊆ Γ' → Ne Γ a → Ne Γ' a
-wkNe i (var x)      = var (wkVar i x)
+  data Nf : Ctx → Ty → Set where
+    emb   : Ne Γ 𝕓 → Nf Γ 𝕓
+    nil   : Nf Γ (𝕃 b)
+    cons  : Nf Γ b → Nf Γ (𝕃 b) → Nf Γ (𝕃 b)
+    mapp  : Nf (Γ `, a) b → Ne Γ (𝕃 a) → Nf Γ (𝕃 b) → Nf Γ (𝕃 b)
 
-wkNf : Γ ⊆ Γ' → Nf Γ a → Nf Γ' a
-wkNf i (emb x)       = emb (wkNe i x)
-wkNf i nil           = nil
-wkNf i (cons n m)    = cons (wkNf i n) (wkNf i m)
-wkNf i (mapp m n m') = mapp (wkNf (keep i) m) (wkNe i n) (wkNf i m')
+mutual
+  wkNe : Γ ⊆ Γ' → Ne Γ a → Ne Γ' a
+  wkNe i (var x)      = var (wkVar i x)
+  wkNe i (fold f b n) = fold (wkNf (keep (keep i)) f) (wkNf i b) (wkNe i n)
 
-wkNe-pres-refl : (n : Ne Γ a) → wkNe ⊆-refl n ≡ n
-wkNe-pres-refl (var x) = ≡-cong var (wkVar-pres-⊆-refl x)
+  wkNf : Γ ⊆ Γ' → Nf Γ a → Nf Γ' a
+  wkNf i (emb x)       = emb (wkNe i x)
+  wkNf i nil           = nil
+  wkNf i (cons n m)    = cons (wkNf i n) (wkNf i m)
+  wkNf i (mapp m n m') = mapp (wkNf (keep i) m) (wkNe i n) (wkNf i m')
 
-wkNe-pres-trans : (i : Γ ⊆ Γ') (i' : Γ' ⊆ Γ'') (n : Ne Γ a)
-  → wkNe (⊆-trans i i') n ≡ wkNe i' (wkNe i n)
-wkNe-pres-trans i i' (var x) = ≡-cong var (wkVar-pres-⊆-trans i i' x)
+postulate
+  wkNe-pres-refl : (n : Ne Γ a) → wkNe ⊆-refl n ≡ n
+  -- wkNe-pres-refl (var x)      = ≡-cong var (wkVar-pres-⊆-refl x)
+  -- wkNe-pres-refl (fold f b n) = ≡-cong₃ fold {!!} {!!} (wkNe-pres-refl n)
+
+  wkNe-pres-trans : (i : Γ ⊆ Γ') (i' : Γ' ⊆ Γ'') (n : Ne Γ a)
+    → wkNe (⊆-trans i i') n ≡ wkNe i' (wkNe i n)
+  -- wkNe-pres-trans i i' (var x)      = ≡-cong var (wkVar-pres-⊆-trans i i' x)
+  -- wkNe-pres-trans i i' (fold f b n) = ≡-cong₃ fold {!!} {!!} (wkNe-pres-trans i i' n)
 
 open import Frame.CFrame 𝒲
 
@@ -66,14 +81,6 @@ data 𝒞 (A : Ctx → Set) : Ctx → Set where
   cons : A Γ → 𝒞 A Γ → 𝒞 A Γ
   mapp : (h : A (Γ `, a)) (n : Ne Γ (𝕃 a)) → 𝒞 A Γ → 𝒞 A Γ
 
---
--- Obs: 𝒞 might not support fold, while ℒ does
--- c.f. implementation of Mfold in Figure 7
---
--- TODO: find out if it does!
---
--- Question: Is foldMap a better behaved option?
---
 
 -- (special case of) "internal" map𝒞
 imap𝒞 : {A B : Ctx → Set}
@@ -231,3 +238,18 @@ module Direct where
   reflect : (a : Ty) → Ne' a →̇ ⟦ a ⟧
   reflect 𝕓     = id'
   reflect (𝕃 a) = map𝒞 (reflect a) ∘' register
+
+  -- c.f. implementation of Mfold as in Figure 7
+  fold𝒞 : (a b : Ty)
+    → ({Γ' : Ctx} → Γ ⊆ Γ' → ⟦ a ⟧ ₀ Γ' → ⟦ b ⟧ ₀ Γ' → ⟦ b ⟧ ₀ Γ')
+    → ⟦ b ⟧ ₀ Γ → 𝒞' ⟦ a ⟧ ₀ Γ → ⟦ b ⟧ ₀ Γ
+  fold𝒞 a b C N nil            = N
+  fold𝒞 a b C N (cons HD TL)   = C ⊆-refl HD (fold𝒞 a b C N TL)
+  fold𝒞 a b C N (mapp F xs YS) = reflect b .apply (fold C' N' xs)
+    where
+    C' = reify b .apply (C (drop (drop ⊆-refl)) (wk ⟦ a ⟧ freshWk F) (reflect b .apply (var zero)))
+    N' = reify b .apply (fold𝒞 a b C N YS)
+
+  --
+  -- Question: fold𝒞 is rather hacky, could a "foldMap" be a better behaved option?
+  --
