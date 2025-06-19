@@ -1,4 +1,4 @@
---{-# OPTIONS --safe #-}
+{-# OPTIONS --safe #-}
 
 -- "New Equations for Neutral Terms"
 -- (https://arxiv.org/abs/1304.0809)
@@ -57,15 +57,35 @@ mutual
   wkNf i (cons n m)    = cons (wkNf i n) (wkNf i m)
   wkNf i (mapp m n m') = mapp (wkNf (keep i) m) (wkNe i n) (wkNf i m')
 
-postulate
+mutual
   wkNe-pres-refl : (n : Ne Γ a) → wkNe ⊆-refl n ≡ n
-  -- wkNe-pres-refl (var x)      = ≡-cong var (wkVar-pres-⊆-refl x)
-  -- wkNe-pres-refl (fold f b n) = ≡-cong₃ fold {!!} {!!} (wkNe-pres-refl n)
+  wkNe-pres-refl (var x)      = ≡-cong var (wkVar-pres-⊆-refl x)
+  wkNe-pres-refl (fold f b n) = ≡-cong₃ fold (wkNf-pres-refl f) (wkNf-pres-refl b) (wkNe-pres-refl n)
 
+  wkNf-pres-refl : (n : Nf Γ a) → wkNf ⊆-refl n ≡ n
+  wkNf-pres-refl (emb x)      = ≡-cong emb (wkNe-pres-refl x)
+  wkNf-pres-refl nil          = ≡-refl
+  wkNf-pres-refl (cons x xs)  = ≡-cong₂ cons (wkNf-pres-refl x) (wkNf-pres-refl xs)
+  wkNf-pres-refl (mapp f x n) = ≡-cong₃ mapp (wkNf-pres-refl f) (wkNe-pres-refl x) (wkNf-pres-refl n)
+
+mutual
   wkNe-pres-trans : (i : Γ ⊆ Γ') (i' : Γ' ⊆ Γ'') (n : Ne Γ a)
     → wkNe (⊆-trans i i') n ≡ wkNe i' (wkNe i n)
-  -- wkNe-pres-trans i i' (var x)      = ≡-cong var (wkVar-pres-⊆-trans i i' x)
-  -- wkNe-pres-trans i i' (fold f b n) = ≡-cong₃ fold {!!} {!!} (wkNe-pres-trans i i' n)
+  wkNe-pres-trans i i' (var x)      = ≡-cong var (wkVar-pres-⊆-trans i i' x)
+  wkNe-pres-trans i i' (fold f b n) = ≡-cong₃ fold
+    (wkNf-pres-trans (keep (keep i)) (keep (keep i')) f)
+    (wkNf-pres-trans i i' b)
+    (wkNe-pres-trans i i' n)
+
+  wkNf-pres-trans : (i : Γ ⊆ Γ') (i' : Γ' ⊆ Γ'') (n : Nf Γ a)
+    → wkNf (⊆-trans i i') n ≡ wkNf i' (wkNf i n)
+  wkNf-pres-trans i i' (emb x)       = ≡-cong emb (wkNe-pres-trans i i' x)
+  wkNf-pres-trans i i' nil           = ≡-refl
+  wkNf-pres-trans i i' (cons x xs)   = ≡-cong₂ cons (wkNf-pres-trans i i' x) (wkNf-pres-trans i i' xs)
+  wkNf-pres-trans i i' (mapp f xs n) = ≡-cong₃ mapp
+    (wkNf-pres-trans (keep i) (keep i') f)
+    (wkNe-pres-trans i i' xs)
+    (wkNf-pres-trans i i' n)
 
 open import Frame.CFrame 𝒲
 
@@ -80,7 +100,6 @@ data 𝒞 (A : Ctx → Set) : Ctx → Set where
   nil  : 𝒞 A Γ
   cons : A Γ → 𝒞 A Γ → 𝒞 A Γ
   mapp : (h : A (Γ `, a)) (n : Ne Γ (𝕃 a)) → 𝒞 A Γ → 𝒞 A Γ
-
 
 -- (special case of) "internal" map𝒞
 imap𝒞 : {A B : Ctx → Set}
