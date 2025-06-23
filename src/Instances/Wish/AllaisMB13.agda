@@ -89,32 +89,41 @@ mutual
 
 open import Frame.CFrame 𝒲
 
--- the actual residualising monad ℒ
+-- the original residualising functor in the paper
+data 𝐋 (A : Ctx → Set) : Ctx → Set where
+  nil  : 𝐋 A Γ
+  cons : A Γ → 𝐋 A Γ → 𝐋 A Γ
+  mapp : (∀ {Γ'} → Γ ⊆ Γ' → Ne Γ' a → A Γ') → Ne Γ (𝕃 a) → 𝐋 A Γ → 𝐋 A Γ
+
+-- a simplified residualising functor
 data ℒ (A : Ctx → Set) : Ctx → Set where
   nil  : ℒ A Γ
   cons : A Γ → ℒ A Γ → ℒ A Γ
-  mapp : (∀ {Γ'} → Γ ⊆ Γ' → Ne Γ' a → A Γ') → Ne Γ (𝕃 a) → ℒ A Γ → ℒ A Γ
+  mapp : (h : A (Γ `, a)) (n : Ne Γ (𝕃 a)) → ℒ A Γ → ℒ A Γ
 
--- a potential replacement for ℒ
-data 𝒞 (A : Ctx → Set) : Ctx → Set where
-  nil  : 𝒞 A Γ
-  cons : A Γ → 𝒞 A Γ → 𝒞 A Γ
-  mapp : (h : A (Γ `, a)) (n : Ne Γ (𝕃 a)) → 𝒞 A Γ → 𝒞 A Γ
-
--- (special case of) "internal" map𝒞
-imap𝒞 : {A B : Ctx → Set}
+-- (special case of) "internal" mapℒ
+imapℒ : {A B : Ctx → Set}
   → (∀ {Γ'} → Γ ⊆ Γ' → A Γ' → B Γ')
-  → 𝒞 A Γ → 𝒞 B Γ
-imap𝒞 f nil          = nil
-imap𝒞 f (cons x m)   = cons (f ⊆-refl x) (imap𝒞 f m)
-imap𝒞 f (mapp h n m) = mapp (f freshWk h) n (imap𝒞 f m)
+  → ℒ A Γ → ℒ B Γ
+imapℒ f nil          = nil
+imapℒ f (cons x m)   = cons (f ⊆-refl x) (imapℒ f m)
+imapℒ f (mapp h n m) = mapp (f freshWk h) n (imapℒ f m)
 
-_++_ : {A : Ctx → Set} → 𝒞 A Γ → 𝒞 A Γ → 𝒞 A Γ
+_++_ : {A : Ctx → Set} → ℒ A Γ → ℒ A Γ → ℒ A Γ
 nil         ++ m2 = m2
 cons x m1   ++ m2 = cons x (m1 ++ m2)
 mapp h n m1 ++ m2 = mapp h n (m1 ++ m2)
 
--- Deriving ℒ
+--
+-- Note: Observe 𝐋 and ℒ are not monads! They do not support
+-- concat, which gives the join of the List monad.
+--
+-- The problematic case is mapp.
+--
+
+--
+-- Deriving ℒ using the cover modality
+--
 
 data K : Ctx → Set where
   nil  : (Γ : Ctx) → K Γ
@@ -222,53 +231,77 @@ Ne' a = uset (λ Γ → Ne Γ a) wkNe
 emb' : Ne' 𝕓 →̇ Nf' 𝕓
 emb' .apply = emb
 
-𝒞' : USet → USet
-𝒞' A = uset (𝒞 (A ₀_)) wk𝒞
+ℒ' : USet → USet
+ℒ' A = uset (ℒ (A ₀_)) wkℒ
   where
-  wk𝒞 : Γ ⊆ Γ' → 𝒞 (A ₀_) Γ → 𝒞 (A ₀_) Γ'
-  wk𝒞 i nil          = nil
-  wk𝒞 i (cons x m)   = cons (wk A i x) (wk𝒞 i m)
-  wk𝒞 i (mapp h n m) = mapp (wk A (keep i) h) (wkNe i n) (wk𝒞 i m)
+  wkℒ : Γ ⊆ Γ' → ℒ (A ₀_) Γ → ℒ (A ₀_) Γ'
+  wkℒ i nil          = nil
+  wkℒ i (cons x m)   = cons (wk A i x) (wkℒ i m)
+  wkℒ i (mapp h n m) = mapp (wk A (keep i) h) (wkNe i n) (wkℒ i m)
+
+-- Equivalence between ℒ' and Cover'
+module Equiv where
+
+  to : {A : USet} → ℒ' A →̇ Cover' A
+  to {A} .apply nil          = nil _ , λ ()
+  to {A} .apply (cons x m)   = let (k , f) = to {A} .apply m in
+    (cons k) , λ
+      { here-cons      → x
+      ; (there-cons p) → f p
+      }
+  to {A} .apply (mapp h n m) = let (k , f) = to {A} .apply m in
+    (mapp n k) , λ
+      { here-mapp      → h
+      ; (there-mapp p) → f p
+      }
+
+  fromAux : {A : USet} {Γ : Ctx} → (k : K Γ) (f : ForAllW k (A ₀_)) → ℒ (A ₀_) Γ
+  fromAux {A} (nil _)    f = nil
+  fromAux {A} (cons k)   f = cons (f here-cons) (fromAux {A} k (f ∘ there-cons))
+  fromAux {A} (mapp n k) f = mapp (f here-mapp) n (fromAux {A} k (f ∘ there-mapp))
+
+  from : {A : USet} → Cover' A →̇ ℒ' A
+  from {A} = runCover {A} (fromAux {A})
 
 -- A direct implementation (without Cover')
 module Direct where
 
   ⟦_⟧ : Ty → USet
   ⟦ 𝕓 ⟧    = Ne' 𝕓
-  ⟦ 𝕃 a ⟧  = 𝒞' ⟦ a ⟧
+  ⟦ 𝕃 a ⟧  = ℒ' ⟦ a ⟧
 
-  map𝒞 : {A B : USet} → (A →̇ B) → 𝒞' A →̇ 𝒞' B
-  map𝒞 f .apply nil          = nil
-  map𝒞 f .apply (cons x m)   = cons (f .apply x) (map𝒞 f .apply m)
-  map𝒞 f .apply (mapp h n m) = mapp (f .apply h) n (map𝒞 f .apply m)
+  mapℒ : {A B : USet} → (A →̇ B) → ℒ' A →̇ ℒ' B
+  mapℒ f .apply nil          = nil
+  mapℒ f .apply (cons x m)   = cons (f .apply x) (mapℒ f .apply m)
+  mapℒ f .apply (mapp h n m) = mapp (f .apply h) n (mapℒ f .apply m)
 
-  collect : 𝒞' (Nf' a) →̇ Nf' (𝕃 a)
+  collect : ℒ' (Nf' a) →̇ Nf' (𝕃 a)
   collect .apply nil          = nil
   collect .apply (cons x m)   = cons x (collect .apply m)
   collect .apply (mapp h n m) = mapp h n (collect .apply m)
 
-  register : Ne' (𝕃 a) →̇ 𝒞' (Ne' a)
+  register : Ne' (𝕃 a) →̇ ℒ' (Ne' a)
   register .apply n = mapp (var zero) n nil
 
   reify : (a : Ty) → ⟦ a ⟧ →̇ Nf' a
   reify 𝕓     = emb'
-  reify (𝕃 a) = collect ∘' map𝒞 (reify a)
+  reify (𝕃 a) = collect ∘' mapℒ (reify a)
 
   reflect : (a : Ty) → Ne' a →̇ ⟦ a ⟧
   reflect 𝕓     = id'
-  reflect (𝕃 a) = map𝒞 (reflect a) ∘' register
+  reflect (𝕃 a) = mapℒ (reflect a) ∘' register
 
   -- c.f. implementation of Mfold as in Figure 7
-  fold𝒞 : (a b : Ty)
-    → ({Γ' : Ctx} → Γ ⊆ Γ' → ⟦ a ⟧ ₀ Γ' → ⟦ b ⟧ ₀ Γ' → ⟦ b ⟧ ₀ Γ')
-    → ⟦ b ⟧ ₀ Γ → 𝒞' ⟦ a ⟧ ₀ Γ → ⟦ b ⟧ ₀ Γ
-  fold𝒞 a b C N nil            = N
-  fold𝒞 a b C N (cons HD TL)   = C ⊆-refl HD (fold𝒞 a b C N TL)
-  fold𝒞 a b C N (mapp F xs YS) = reflect b .apply (fold C' N' xs)
+  foldℒ : (A : USet) (b : Ty)
+    → ({Γ' : Ctx} → Γ ⊆ Γ' → A ₀ Γ' → ⟦ b ⟧ ₀ Γ' → ⟦ b ⟧ ₀ Γ')
+    → ⟦ b ⟧ ₀ Γ → ℒ (A ₀_) Γ → ⟦ b ⟧ ₀ Γ
+  foldℒ A b C N nil            = N
+  foldℒ A b C N (cons HD TL)   = C ⊆-refl HD (foldℒ A b C N TL)
+  foldℒ A b C N (mapp F xs YS) = reflect b .apply (fold C' N' xs)
     where
-    C' = reify b .apply (C (drop (drop ⊆-refl)) (wk ⟦ a ⟧ freshWk F) (reflect b .apply (var zero)))
-    N' = reify b .apply (fold𝒞 a b C N YS)
+    C' = reify b .apply (C (drop (drop ⊆-refl)) (wk A freshWk F) (reflect b .apply (var zero)))
+    N' = reify b .apply (foldℒ A b C N YS)
 
   --
-  -- Question: fold𝒞 is rather hacky, could a "foldMap" be a better behaved option?
+  -- Question: foldℒ is rather hacky, could a "foldMap" be a better behaved option?
   --
