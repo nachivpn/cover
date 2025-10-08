@@ -13,6 +13,9 @@ private
   variable
     a b c d : Ty
 
+𝕎 : Preorder Ctx _⊆_
+𝕎 = record { ⊆-trans = ⊆-trans ; ⊆-refl = ⊆-refl }
+
 ⊆-trans-unit-left : (w : Γ' ⊆ Γ) → ⊆-refl ∙ w ≡ w
 ⊆-trans-unit-left base      = refl
 ⊆-trans-unit-left (drop w)  = cong drop (⊆-trans-unit-left w)
