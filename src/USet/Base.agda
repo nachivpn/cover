@@ -22,9 +22,10 @@ open import Relation.Binary.PropositionalEquality.Properties
   using () renaming (isEquivalence to ≡-equiv)
 
 open import Data.Unit
-open import Data.Sum
 open import Data.Product
   using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂ ; uncurry)
+open import Data.Empty
+open import Data.Sum
 
 private
   variable
@@ -91,6 +92,9 @@ id' .apply = id
 _∘'_ : {A B C : USet} → B →̇ C → A →̇ B → A →̇ C
 (f ∘' g) .apply = f .apply ∘ g .apply
 
+unit' : {A : USet} → A →̇ ⊤'
+unit' .apply _ = tt
+
 ⟨_,_⟩' : {G A B : USet} → (G →̇ A) → (G →̇ B) → (G →̇ (A ×' B))
 ⟨ t , u ⟩' = fun λ g → t .apply g , u .apply g
 
@@ -118,6 +122,9 @@ inj₂' .apply = inj₂
 mapCover' : {A B : USet} → (f : A →̇ B) → Cover' A →̇ Cover' B
 mapCover' f .apply (k , g) = k , f .apply ∘ g
 
+×'-distr-Cover' : {A B : USet} → Cover' (A ×' B) →̇ (Cover' A ×' Cover' B)
+×'-distr-Cover' .apply (k , f) = (k , (proj₁ ∘ f)) , (k , (proj₂ ∘ f))
+
 curry' : {G A B : USet} → (G ×' A) →̇ B → G →̇ (A →' B)
 curry' {G = G} f .apply g i a = f .apply (wk G i g , a)
 
@@ -134,7 +141,7 @@ module Strength (PNF : Reachable NF) where
 
   strength' : {A B : USet} → (A ×' Cover' B) →̇ Cover' (A ×' B)
   strength' {A} .apply {w} (a , k , bs) = k , (λ {v} v∈k → (wk A (reachable k v∈k) a) , bs v∈k)
-  
+
 module Return (PNF : Pointed NF) where
   open Pointed PNF
 
@@ -143,7 +150,7 @@ module Return (PNF : Pointed NF) where
 
   return' : {G A : USet} → G →̇ A → G →̇ Cover' A
   return' = point' ∘'_
-  
+
 module Join (JNF : Joinable NF) where
   open Joinable JNF
 
@@ -157,4 +164,21 @@ module Letin (PNF : Reachable NF) (JNF : Joinable NF) where
   open Join JNF
 
   letin' : {G A B : USet} → (G →̇ Cover' A) → ((G ×' A) →̇ Cover' B) → (G →̇ Cover' B)
-  letin' {G} {A} {B} t u = ((join' {B} ∘' mapCover' u) ∘' strength' {G} {A}) ∘' ⟨ id' , t ⟩' 
+  letin' {G} {A} {B} t u = ((join' {B} ∘' mapCover' u) ∘' strength' {G} {A}) ∘' ⟨ id' , t ⟩'
+
+module ×'-Distr (MNF : Magma NF) where
+  open Magma MNF
+
+  _⊗'_ : {A B : USet} → (Cover' A ×' Cover' B) →̇ Cover' (A ×' B)
+  _⊗'_ {A} {B} .apply ((k1 , f1) , (k2 , f2)) = (k1 ⊗ k2) , λ p →
+    let (v1 , v2 , (p1 , i1) , (p2 , i2)) = ⊗-bwd-reachable k1 k2 p
+    in wk A i1 (f1 p1) , wk B i2 (f2 p2)
+
+module Nothing (ENF : Empty NF) where
+  open Empty ENF
+
+  global' : {A : USet} → ⊤' →̇ Cover' A
+  global' .apply _ = emptyK[ _ ] , ⊥-elim ∘ emptyK-bwd-absurd
+
+  nothing' : {G A : USet} → G →̇ Cover' A
+  nothing' {A = A} = global' {A} ∘' unit'
