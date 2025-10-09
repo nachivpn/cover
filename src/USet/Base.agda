@@ -118,6 +118,12 @@ inj₂' .apply = inj₂
 mapCover' : {A B : USet} → (f : A →̇ B) → Cover' A →̇ Cover' B
 mapCover' f .apply (k , g) = k , f .apply ∘ g
 
+curry' : {G A B : USet} → (G ×' A) →̇ B → G →̇ (A →' B)
+curry' {G = G} f .apply g i a = f .apply (wk G i g , a)
+
+uncurry' : {G A B : USet} → G →̇ (A →' B) → (G ×' A) →̇ B
+uncurry' f .apply (g , x) = f .apply g ⊆-refl x
+
 module _ {A B : USet} (run : {w : W} (k : K w) (f : ForAllW k (A ₀_)) → B ₀ w) where
 
   runCover : Cover' A →̇ B
