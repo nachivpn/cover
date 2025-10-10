@@ -137,6 +137,9 @@ SJNF = record
 
 JNF = StrictlyJoinable.joinable SJNF
 
+ENF : Empty NF
+ENF = record { emptyK[_] = λ _ → nil ; emptyK-bwd-absurd = λ { () } }
+
 -- imports USet, Cover' (the derived cover monad), etc.
 open import USet.Base 𝕎 K _∈_ NF renaming (Cover' to Maybe')
 
@@ -163,7 +166,7 @@ emb' .apply = emb
 --
 
 nothing' : {G A : USet} → G →̇ Maybe' A
-nothing' = fun (λ _ → nil , λ {()})
+nothing' {G} {A} = Nothing.nothing' ENF {A = A}
 
 just' : {G A : USet} → G →̇ A → G →̇ Maybe' A
 just' = Return.return' PNF

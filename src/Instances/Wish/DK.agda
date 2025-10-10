@@ -1,14 +1,10 @@
 {-# OPTIONS --safe #-}
 
 -- Dual Context K calculus
-module Instances.DK where
+module Instances.Wish.DK where
 
 open import Data.Product
   using (Σ; ∃; ∃₂; _×_; _,_; -,_ ; proj₁ ; proj₂ ; curry ; uncurry)
-
-open import Relation.Binary.PropositionalEquality using (_≡_)
-  renaming (refl to ≡-refl ; sym to ≡-sym ; trans to ≡-trans
-  ; cong to ≡-cong ; cong₂ to ≡-cong₂ ; subst to ≡-subst)
 
 open import PUtil
 
@@ -50,13 +46,6 @@ wkNf i1 i2 (up x)      = up (wkNe i1 i2 x )
 wkNf i1 i2 (box n)     = box (wkNf base i1 n)
 wkNf i1 i2 (letin x n) = letin (wkNe i1 i2 x) (wkNf (keep i1) i2 n)
 
-wkNe-pres-refl : (n : Δ ⨾ Γ ⊢Ne a) → wkNe ⊆-refl ⊆-refl n ≡ n
-wkNe-pres-refl (var x) = ≡-cong var (wkVar-pres-⊆-refl x)
-
-wkNe-pres-trans : (i1 : Δ ⊆ Δ') (i2 : Γ ⊆ Γ') (i1' : Δ' ⊆ Δ'') (i2' : Γ' ⊆ Γ'') (n : Δ ⨾ Γ ⊢Ne a)
-  → wkNe (⊆-trans i1 i1') (⊆-trans i2 i2') n ≡ wkNe i1' i2' (wkNe i1 i2 n)
-wkNe-pres-trans i1 i2 i1' i2' (var x) = ≡-cong var (wkVar-pres-⊆-trans i2 i2' x)
-
 data Box (A : Ctx → Ctx → Set) (Δ Γ : Ctx) : Set where
   box    : A [] Δ → Box A Δ Γ
   letbox : Δ ⨾ Γ ⊢Ne (◻ a) → Box A (Δ `, a) Γ → Box A Δ Γ
@@ -87,130 +76,60 @@ _⊆₂_ : Ctx × Ctx → Ctx × Ctx → Set
 ⊆₂-trans : Χ ⊆₂ Χ' → Χ' ⊆₂ Χ'' → Χ ⊆₂ Χ''
 ⊆₂-trans (i1 , i2) (i1' , i2') = ⊆-trans i1 i1' , ⊆-trans i2 i2'
 
-⊆₂-trans-assoc : (i : Χ ⊆₂ Χ') (i' : Χ' ⊆₂ Χ'') (i'' : Χ'' ⊆₂ Χ''')
-  → ⊆₂-trans (⊆₂-trans i i') i'' ≡ ⊆₂-trans i (⊆₂-trans i' i'')
-⊆₂-trans-assoc (i1 , i2) (i1' , i2') (i1'' , i2'')
-  rewrite ⊆-trans-assoc i1 i1' i1''
-  | ⊆-trans-assoc i2 i2' i2''
-  = ≡-refl
-
 ⊆₂-refl : Χ ⊆₂ Χ
 ⊆₂-refl = ⊆-refl , ⊆-refl
 
-⊆₂-trans-unit-left : (i : Χ ⊆₂ Χ') → ⊆₂-trans ⊆₂-refl i ≡ i
-⊆₂-trans-unit-left (i1 , i2)
-  rewrite ⊆-trans-unit-left i1
-  | ⊆-trans-unit-left i2
-  = ≡-refl
-
-⊆₂-trans-unit-right : (i : Χ ⊆₂ Χ') → ⊆₂-trans i ⊆₂-refl ≡ i
-⊆₂-trans-unit-right (i1 , i2)
-  rewrite ⊆-trans-unit-right i1
-  | ⊆-trans-unit-right i2
-  = ≡-refl
-
 open import Frame.IFrame
 
-𝒲₂ : IFrame Ctx₂ _⊆₂_
-𝒲₂ = record
+𝕎₂ : Preorder Ctx₂ _⊆₂_
+𝕎₂ = record
       { ⊆-trans            = ⊆₂-trans
-      ; ⊆-trans-assoc      = ⊆₂-trans-assoc
       ; ⊆-refl             = ⊆₂-refl
-      ; ⊆-trans-unit-left  = ⊆₂-trans-unit-left
-      ; ⊆-trans-unit-right = ⊆₂-trans-unit-right
       }
 
 wkK : Δ ⊆ Δ' → Γ ⊆ Γ' → K Δ Γ → K Δ' Γ'
 wkK i1 i2 (single _ _) = single _ _
 wkK i1 i2 (cons x k)   = cons (wkNe i1 i2 x) (wkK (keep i1) i2 k)
 
-wkK-pres-refl : (k : K Δ Γ) → wkK ⊆-refl ⊆-refl k ≡ k
-wkK-pres-refl (single _ _)
-  = ≡-refl
-wkK-pres-refl (cons x k)
-  = ≡-cong₂ cons (wkNe-pres-refl x) (wkK-pres-refl k)
-
-wkK-pres-trans : (i1 : Δ ⊆ Δ') (i1' : Δ' ⊆ Δ'')
-  → (i2 : Γ ⊆ Γ') (i2' : Γ' ⊆ Γ'') (k : K Δ Γ)
-  → wkK (⊆-trans i1 i1') (⊆-trans i2 i2') k ≡ wkK i1' i2' (wkK i1 i2 k)
-wkK-pres-trans i1 i1' i2 i2' (single _ _)
-  = ≡-refl
-wkK-pres-trans i1 i1' i2 i2' (cons x k)
-  = ≡-cong₂ cons (wkNe-pres-trans i1 i2 i1' i2' x) (wkK-pres-trans (keep i1) (keep i1')  _ _ k)
-
 K₂ = uncurry K
 
 wkK₂ : Χ ⊆₂ Χ' → K₂ Χ → K₂ Χ'
 wkK₂ = uncurry wkK
 
-wkK₂-pres-refl : (k : K₂ Χ) → wkK₂ ⊆₂-refl k ≡ k
-wkK₂-pres-refl k = wkK-pres-refl k
-
-wkK₂-pres-trans : (i : Χ ⊆₂ Χ') (i' : Χ' ⊆₂ Χ'') (k : K₂ Χ)
-  → wkK₂ (⊆₂-trans i i') k ≡ wkK₂ i' (wkK₂ i k)
-wkK₂-pres-trans (i1 , i2) (i1' , i2') k = wkK-pres-trans i1 i1' i2 i2' k
-
-open import Frame.CFrame 𝒲₂
-
-𝒦 : KPsh
-𝒦 = record
-  { K              = K₂
-  ; wkK            = wkK₂
-  ; wkK-pres-refl  = wkK₂-pres-refl
-  ; wkK-pres-trans = wkK₂-pres-trans
-  }
+open import Frame.NFrame 𝕎₂
 
 _∈_ : Ctx₂ → ∀ {Χ} → K₂ Χ → Set
 Χ ∈ k = uncurry (_⨾_∈ k) Χ
 
-open {-CF.-}Core 𝒦 _∈_
+open {-CF.-}Core K₂ _∈_
 
-factor : (i1 : Δ ⊆ Δ') (i2 : Γ ⊆ Γ') (k : K Δ Γ)
+wkK-resp-⊆ : (i1 : Δ ⊆ Δ') (i2 : Γ ⊆ Γ') (k : K Δ Γ)
   → k ⊆k wkK i1 i2 k
-factor i1 i2 (single _ _) here      = _ , here , base , i1
-factor i1 i2 (cons x k)   (there p) =
-  let (_ , p' , i1' , i2') = factor (keep i1) i2 k p
+wkK-resp-⊆ i1 i2 (single _ _) here      = _ , here , base , i1
+wkK-resp-⊆ i1 i2 (cons x k)   (there p) =
+  let (_ , p' , i1' , i2') = wkK-resp-⊆ (keep i1) i2 k p
   in _ , there p' , i1' , i2'
 
-factor-pres-refl : (k : K Δ Γ) → factor ⊆-refl ⊆-refl k ≋ ⊆k-refl[ k ]'
-factor-pres-refl (single _ _) here
-  = ≡-refl
-factor-pres-refl (cons x k)   (there p)
-  rewrite factor-pres-refl k p
-  | wkNe-pres-refl x
-  | wkK-pres-refl k
-  = ≡-refl
+wkK₂-resp-⊆₂ : (i : Χ ⊆₂ Χ') (k : K₂ Χ) → k ⊆k wkK₂ i k
+wkK₂-resp-⊆₂ = uncurry wkK-resp-⊆
 
-factor-pres-trans : (i1 : Δ ⊆ Δ') (i2 : Γ ⊆ Γ') (i1' : Δ' ⊆ Δ'') (i2' : Γ' ⊆ Γ'') (k : K Δ Γ)
-  → factor (⊆-trans i1 i1') (⊆-trans i2 i2') k
-    ≋ ⊆k-trans' {i = i1 , i2} {i' = i1' , i2'} k (factor i1 i2 k) (factor i1' i2' (wkK i1 i2 k))
-factor-pres-trans i1 i2 i1' i2' (single _ _) here
-  = ≡-refl
-factor-pres-trans i1 i2 i1' i2' (cons n k) (there p)
-  rewrite factor-pres-trans (keep i1) i2 (keep i1') i2' k p
-    | wkNe-pres-trans i1 i2 i1' i2' n
-    | wkK-pres-trans (keep i1) (keep i1') i2 i2' k
-  = ≡-refl
+NF : NFrame
+NF = record { wkK = wkK₂ ; wkK-resp-⊆ = wkK₂-resp-⊆₂ }
 
-factor₂ : (i : Χ ⊆₂ Χ') (k : K₂ Χ) → k ⊆k wkK₂ i k
-factor₂ = uncurry factor
+_⊗_ : K₂ Χ → K₂ Χ → K₂ Χ
+single _ _ ⊗ k' = k'
+cons x k   ⊗ k' = cons x (k ⊗ wkK freshWk ⊆-refl k')
 
-factor₂-pres-refl : (k : K₂ Χ) → factor₂ ⊆₂-refl k ≋ ⊆k-refl[ k ]'
-factor₂-pres-refl k = factor-pres-refl k
+--TODO:
+-- ⊗-bwd-reachable : (k1 k2 : K₂ Χ)
+--   → ForAllW (k1 ⊗ k2)
+--     (λ Χ' → ∃₂ (λ Χ1 Χ2 → (Χ1 ∈ k1 × Χ1 ⊆₂ Χ') × (Χ2 ∈ k2 × Χ2 ⊆₂ Χ')))
+-- ⊗-bwd-reachable = {!!}
 
-factor₂-pres-trans : (i : Χ ⊆₂ Χ') (i' : Χ' ⊆₂ Χ'') (k : K₂ Χ)
-  → factor₂ (⊆₂-trans i i') k
-    ≋ ⊆k-trans' {i = i} {i' = i'} k (factor₂ i k) (factor₂ i' (wkK₂ i k))
-factor₂-pres-trans (i1 , i2) (i1' , i2') k = factor-pres-trans i1 i2 i1' i2' k
+-- MNF : Magma NF
+-- MNF = record { _⊗_ = _⊗_ ; ⊗-bwd-reachable = ⊗-bwd-reachable }
 
-CF : CFrame
-CF = record
-  { factor            = factor₂
-  ; factor-pres-refl  = factor₂-pres-refl
-  ; factor-pres-trans = factor₂-pres-trans
-  }
-
-open import USet.Base 𝒲₂ 𝒦 _∈_ CF
+open import USet.Base 𝕎₂ K₂ _∈_ NF
 
 module Equiv where
 
