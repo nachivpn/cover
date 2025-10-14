@@ -67,6 +67,10 @@ keep  w ∙ keep  w' = keep  (w ∙ w')
 
 ⊆-trans = _∙_
 
+⊆-init[_] : (Γ : Ctx) → [] ⊆ Γ
+⊆-init[ [] ]     = base
+⊆-init[ Γ `, a ] = drop ⊆-init[ Γ ]
+
 ------------
 -- Variables
 ------------
