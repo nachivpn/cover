@@ -172,7 +172,7 @@ just' : {G A : USet} → G →̇ A → G →̇ Maybe' A
 just' = Return.return' PNF
 
 letin' : {G A B : USet} → (G →̇ Maybe' A) → ((G ×' A) →̇ Maybe' B) → (G →̇ Maybe' B)
-letin' {G} {A} {B} = Letin.letin' RNF JNF {G} {A} {B}
+letin' {G} {A} {B} = StrongJoin.letin' RNF JNF {G} {A} {B}
 
 evalVar : Var Γ a →  ⟦ Γ ⟧c →̇ ⟦ a ⟧
 evalVar zero     = proj₂'

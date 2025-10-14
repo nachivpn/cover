@@ -16,6 +16,7 @@ infix  3  _⨾_⊢Nf_
 
 data Ty : Set where
   𝕓  : Ty
+  _⇒_ : Ty → Ty → Ty
   ◻_ : Ty → Ty
 
 private
@@ -26,12 +27,15 @@ open import Context Ty
 
 data _⨾_⊢_ (Δ Γ : Ctx) : Ty → Set where
   var   : (x : Var Γ a) → Δ ⨾ Γ ⊢ a
+  lam   : Δ ⨾ (Γ `, a) ⊢ b → Δ ⨾ Γ ⊢ (a ⇒ b)
+  app   : Δ ⨾ Γ ⊢ (a ⇒ b) → Δ ⨾ Γ ⊢ a → Δ ⨾ Γ ⊢ b
   box   : (t : [] ⨾ Δ ⊢ a) →  Δ ⨾ Γ ⊢ (◻ a)
   letin : (t : Δ ⨾ Γ ⊢ (◻ a)) → (u : (Δ `, a) ⨾ Γ ⊢ b) →  Δ ⨾ Γ ⊢ b
 
 mutual
   data _⨾_⊢Ne_ (Δ Γ : Ctx) : Ty → Set where
     var : Var Γ a → Δ ⨾ Γ ⊢Ne a
+    app : Δ ⨾  Γ ⊢Ne (a ⇒ b) → Δ ⨾ Γ ⊢Nf a → Δ ⨾ Γ ⊢Ne b
 
   data _⨾_⊢Nf_ (Δ Γ : Ctx) : Ty → Set where
     up    : Δ ⨾ Γ ⊢Ne 𝕓 → Δ ⨾ Γ ⊢Nf 𝕓
@@ -39,9 +43,12 @@ mutual
     letin : Δ ⨾ Γ ⊢Ne ◻ a → Δ `, a ⨾ Γ ⊢Nf ◻ b → Δ ⨾ Γ ⊢Nf ◻ b
 
 wkNe : Δ ⊆ Δ' → Γ ⊆ Γ' → Δ ⨾ Γ ⊢Ne a → Δ' ⨾ Γ' ⊢Ne a
-wkNe _ i (var x) = var (wkVar i x)
-
 wkNf : Δ ⊆ Δ' → Γ ⊆ Γ' → Δ ⨾ Γ ⊢Nf a → Δ' ⨾ Γ' ⊢Nf a
+
+wkNe _  i  (var x)   = var (wkVar i x)
+wkNe i1 i2 (app n m) = app (wkNe i1 i2 n) (wkNf i1 i2 m)
+
+
 wkNf i1 i2 (up x)      = up (wkNe i1 i2 x )
 wkNf i1 i2 (box n)     = box (wkNf base i1 n)
 wkNf i1 i2 (letin x n) = letin (wkNe i1 i2 x) (wkNf (keep i1) i2 n)
@@ -116,20 +123,90 @@ wkK₂-resp-⊆₂ = uncurry wkK-resp-⊆
 NF : NFrame
 NF = record { wkK = wkK₂ ; wkK-resp-⊆ = wkK₂-resp-⊆₂ }
 
-_⊗_ : K₂ Χ → K₂ Χ → K₂ Χ
-single _ _ ⊗ k' = k'
+_⊗_ : K Δ Γ → K Δ Γ → K Δ Γ
+single Δ Γ ⊗ k' = k'
 cons x k   ⊗ k' = cons x (k ⊗ wkK freshWk ⊆-refl k')
 
---TODO:
--- ⊗-bwd-reachable : (k1 k2 : K₂ Χ)
---   → ForAllW (k1 ⊗ k2)
---     (λ Χ' → ∃₂ (λ Χ1 Χ2 → (Χ1 ∈ k1 × Χ1 ⊆₂ Χ') × (Χ2 ∈ k2 × Χ2 ⊆₂ Χ')))
--- ⊗-bwd-reachable = {!!}
+∈-fwd-reachable : (k : K Δ Γ) → Ξ ⨾ Θ ∈ k → Ξ ⊆ Γ
+∈-fwd-reachable (single Δ Γ) here      = ⊆-init[ Γ ]
+∈-fwd-reachable (cons x k)   (there p) = ∈-fwd-reachable k p
 
--- MNF : Magma NF
--- MNF = record { _⊗_ = _⊗_ ; ⊗-bwd-reachable = ⊗-bwd-reachable }
+∈-bwd-reachable : (k : K Δ Γ) → Ξ ⨾ Θ ∈ k → Δ ⊆ Θ
+∈-bwd-reachable (single Δ Γ) here = ⊆-refl[ Δ ]
+∈-bwd-reachable (cons x k)   (there p) = freshWk ∙ ∈-bwd-reachable k p
 
-open import USet.Base 𝕎₂ K₂ _∈_ NF
+∈-bwd-reachable₂ : (k : K Δ Γ) → Ξ ⨾ Θ ∈ k → ([] , Δ) ⊆₂ (Ξ , Θ)
+∈-bwd-reachable₂ k p = ⊆-init[ _ ] , ∈-bwd-reachable k p
+
+⊗-bwd-reachable : (k1 k2 : K Δ Γ) → ForAllW (k1 ⊗ k2)
+     (λ Χ' → ∃₂ (λ Χ1 Χ2 → Χ1 ∈ k1 × Χ1 ⊆₂ Χ' × Χ2 ∈ k2 × Χ2 ⊆₂ Χ'))
+⊗-bwd-reachable (single Δ Γ) k      {Ξ , Θ}       p
+  = ([] , Δ) , (Ξ , Θ)
+  , here , ∈-bwd-reachable₂ k p
+  , p    , ⊆₂-refl
+⊗-bwd-reachable (cons x k1) k2       {Ξ , Θ}     (there p)
+  = let ((Δ1 , Γ1) , (Δ2 , Γ2) , p1 , i1 , p2 , i2) = ⊗-bwd-reachable k1 (wkK freshWk ⊆-refl k2) p
+        ((Δ2' , Γ2') , p2' , i2') = wkK-resp-⊆ freshWk ⊆-refl k2 p2
+    in _ , _
+      , there p1 , i1
+      , p2' , ⊆₂-trans i2' i2
+
+MNF : Magma NF
+MNF = record { _⊗_ = _⊗_ ; ⊗-bwd-reachable = ⊗-bwd-reachable }
+
+unitK : ∀ Χ → K₂ Χ
+unitK Χ = single _ _
+
+UNF : Unital NF
+UNF = record { unitK[_] = unitK }
+
+open import USet.Base 𝕎₂ K₂ _∈_ NF renaming (Cover' to Box')
+
+Nf' : Ty → USet
+Nf' a = uset (uncurry (_⨾_⊢Nf a)) (uncurry wkNf)
+
+Ne' : Ty → USet
+Ne' a = uset (uncurry (_⨾_⊢Ne a)) (uncurry wkNe)
+
+⟦_⟧ : Ty → USet
+⟦ 𝕓     ⟧ = Nf' 𝕓
+⟦ a ⇒ b ⟧ = ⟦ a ⟧ →' ⟦ b ⟧
+⟦ ◻ a   ⟧ = Box' (⟦ a ⟧)
+
+⟦_⟧c : Ctx → USet
+⟦ [] ⟧c     = ⊤'
+⟦ Γ `, a ⟧c = ⟦ Γ ⟧c ×' ⟦ a ⟧
+
+⟦_⟧c₂ : Ctx₂ → USet
+⟦ Δ , Γ ⟧c₂ = Box' ⟦ Δ ⟧c ×' ⟦ Γ ⟧c
+
+evalVar : Var Γ a →  ⟦ Γ ⟧c →̇ ⟦ a ⟧
+evalVar zero     = proj₂'
+evalVar (succ x) = evalVar x ∘'  proj₁'
+
+letin' : {D G A B : USet}
+  → (Box' D ×' G) →̇ Box' A
+  → (Box' (D ×' A) ×' G) →̇ B
+  → (Box' D ×' G) →̇ B
+letin' {D} {G} {A} = ×'-distr.letin' MNF {D = D} {A = A}
+
+prBox' : {G A B : USet} → G →̇ Box' A → G →̇ Box' B → G →̇ Box' (A ×' B)
+prBox' {G} {A} {B} = ×'-distr.prCover' MNF {G = G} {A = A} {B = B}
+
+unitCover' : {G : USet} → G →̇ Box' ⊤'
+unitCover' = ⊤'-distr.unitCover' UNF
+
+eval : Δ ⨾ Γ ⊢ a → ⟦ Δ , Γ ⟧c₂ →̇ ⟦ a ⟧
+eval (var x)
+  = evalVar x ∘' proj₂'
+eval (lam {a = a} {b} t)
+  = lam' {A = ⟦ a ⟧} {B = ⟦ b ⟧} (eval t ∘' x-right-assoc)
+eval (app t u)
+  = app' (eval t) (eval u)
+eval {Δ} {Γ} (box {a = a} t)
+  = mapCover' {A = ⟦ Δ ⟧c} {B = ⟦ a ⟧} (eval t ∘' ⟨ unitCover' {G = ⟦ Δ ⟧c } , id' ⟩') ∘' proj₁'
+eval {Δ} (letin {a = a} t u)
+  = letin' {D = ⟦ Δ ⟧c} {A = ⟦ a ⟧} (eval t) (eval u)
 
 module Equiv where
 
@@ -144,7 +221,7 @@ module Equiv where
     wkBox i1 i2 (box x)      = box (curry (wk A₂) base i1 x)
     wkBox i1 i2 (letbox x b) = letbox (wkNe i1 i2 x) (wkBox (keep i1) i2 b)
 
-  to : {A : USet} → 𝒞' A →̇ Cover' A
+  to : {A : USet} → 𝒞' A →̇ Box' A
   to {A} .apply (box x)      = single _ _ , λ { here → x }
   to {A} .apply (letbox x m) =
     let (k , f) = to {A} .apply m
@@ -154,5 +231,5 @@ module Equiv where
   fromAux {A} (single _ _) f = box (f here)
   fromAux {A} (cons x k)   f = letbox x (fromAux {A} k (f ∘ there))
 
-  from : {A : USet} → Cover' A →̇ 𝒞' A
+  from : {A : USet} → Box' A →̇ 𝒞' A
   from {A} = runCover {A} (fromAux {A})

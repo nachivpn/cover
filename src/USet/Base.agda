@@ -131,10 +131,22 @@ curry' {G = G} f .apply g i a = f .apply (wk G i g , a)
 uncurry' : {G A B : USet} → G →̇ (A →' B) → (G ×' A) →̇ B
 uncurry' f .apply (g , x) = f .apply g ⊆-refl x
 
+x-right-assoc : {A B C : USet} → ((A ×' B) ×' C) →̇ (A ×' (B ×' C))
+x-right-assoc .apply ((a , b) , c) = a , (b , c)
+
 module _ {A B : USet} (run : {w : W} (k : K w) (f : ForAllW k (A ₀_)) → B ₀ w) where
 
   runCover : Cover' A →̇ B
   runCover .apply = uncurry run
+
+module Nothing (ENF : Empty NF) where
+  open Empty ENF
+
+  empty' : {A : USet} → ⊤' →̇ Cover' A
+  empty' .apply _ = emptyK[ _ ] , ⊥-elim ∘ emptyK-bwd-absurd
+
+  nothing' : {G A : USet} → G →̇ Cover' A
+  nothing' {A = A} = empty' {A} ∘' unit'
 
 module Strength (PNF : Reachable NF) where
   open Reachable PNF
@@ -159,26 +171,36 @@ module Join (JNF : Joinable NF) where
     let u , u∈k , v , v∈h- , v⊆v' = joinK-bwd-reachable k (proj₁ ∘ h) v∈jN
     in wk A v⊆v' (h u∈k .proj₂ v∈h-)
 
-module Letin (PNF : Reachable NF) (JNF : Joinable NF) where
+module StrongJoin (PNF : Reachable NF) (JNF : Joinable NF) where
   open Strength PNF
   open Join JNF
 
   letin' : {G A B : USet} → (G →̇ Cover' A) → ((G ×' A) →̇ Cover' B) → (G →̇ Cover' B)
   letin' {G} {A} {B} t u = ((join' {B} ∘' mapCover' u) ∘' strength' {G} {A}) ∘' ⟨ id' , t ⟩'
 
-module ×'-Distr (MNF : Magma NF) where
+module ×'-distr (MNF : Magma NF) where
   open Magma MNF
 
-  _⊗'_ : {A B : USet} → (Cover' A ×' Cover' B) →̇ Cover' (A ×' B)
-  _⊗'_ {A} {B} .apply ((k1 , f1) , (k2 , f2)) = (k1 ⊗ k2) , λ p →
-    let (v1 , v2 , (p1 , i1) , (p2 , i2)) = ⊗-bwd-reachable k1 k2 p
+  ×'-distr-back' : {A B : USet} → (Cover' A ×' Cover' B) →̇ Cover' (A ×' B)
+  ×'-distr-back' {A} {B} .apply ((k1 , f1) , (k2 , f2)) = (k1 ⊗ k2) , λ p →
+    let (v1 , v2 , p1 , i1 , p2 , i2) = ⊗-bwd-reachable k1 k2 p
     in wk A i1 (f1 p1) , wk B i2 (f2 p2)
 
-module Nothing (ENF : Empty NF) where
-  open Empty ENF
+  prCover' : {G A B : USet} → G →̇ Cover' A → G →̇ Cover' B → G →̇ Cover' (A ×' B)
+  prCover' {G} {A} {B} t u = ×'-distr-back' {A = A} {B = B} ∘' ⟨ t , u ⟩'
 
-  global' : {A : USet} → ⊤' →̇ Cover' A
-  global' .apply _ = emptyK[ _ ] , ⊥-elim ∘ emptyK-bwd-absurd
+  letin' : {D G A B : USet} → (Cover' D ×' G) →̇ Cover' A → (Cover' (D ×' A) ×' G) →̇ B
+    → (Cover' D ×' G) →̇ B
+  letin' {D} {G} {A} {B} t u = u ∘' ⟨ prCover' {A = D} {B = A} proj₁' t , proj₂' ⟩'
 
-  nothing' : {G A : USet} → G →̇ Cover' A
-  nothing' {A = A} = global' {A} ∘' unit'
+module ⊤'-distr (UNF : Unital NF) where
+  open Unital UNF
+
+  ⊤'-distr-back' : ⊤' →̇ Cover' ⊤'
+  ⊤'-distr-back' .apply _ = unitK[ _ ] , _
+
+  unitCover' : {G : USet} → G →̇ Cover' ⊤'
+  unitCover' = ⊤'-distr-back' ∘' unit'
+
+  nec' : {G A : USet} → ⊤' →̇ A → G →̇ Cover' A
+  nec' f = mapCover' f ∘' unitCover'
