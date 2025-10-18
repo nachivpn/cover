@@ -38,7 +38,8 @@ mutual
     app : Δ ⨾  Γ ⊢Ne (a ⇒ b) → Δ ⨾ Γ ⊢Nf a → Δ ⨾ Γ ⊢Ne b
 
   data _⨾_⊢Nf_ (Δ Γ : Ctx) : Ty → Set where
-    up    : Δ ⨾ Γ ⊢Ne 𝕓 → Δ ⨾ Γ ⊢Nf 𝕓
+    emb   : Δ ⨾ Γ ⊢Ne 𝕓 → Δ ⨾ Γ ⊢Nf 𝕓
+    lam   : Δ ⨾ (Γ `, a) ⊢Nf b → Δ ⨾ Γ ⊢Nf (a ⇒ b)
     box   : [] ⨾ Δ ⊢Nf a → Δ ⨾ Γ ⊢Nf ◻ a
     letin : Δ ⨾ Γ ⊢Ne ◻ a → Δ `, a ⨾ Γ ⊢Nf ◻ b → Δ ⨾ Γ ⊢Nf ◻ b
 
@@ -48,8 +49,8 @@ wkNf : Δ ⊆ Δ' → Γ ⊆ Γ' → Δ ⨾ Γ ⊢Nf a → Δ' ⨾ Γ' ⊢Nf a
 wkNe _  i  (var x)   = var (wkVar i x)
 wkNe i1 i2 (app n m) = app (wkNe i1 i2 n) (wkNf i1 i2 m)
 
-
-wkNf i1 i2 (up x)      = up (wkNe i1 i2 x )
+wkNf i1 i2 (emb x)     = emb (wkNe i1 i2 x )
+wkNf i1 i2 (lam x)     = lam (wkNf i1 (keep i2) x)
 wkNf i1 i2 (box n)     = box (wkNf base i1 n)
 wkNf i1 i2 (letin x n) = letin (wkNe i1 i2 x) (wkNf (keep i1) i2 n)
 
@@ -85,6 +86,7 @@ _⊆₂_ : Ctx × Ctx → Ctx × Ctx → Set
 
 ⊆₂-refl : Χ ⊆₂ Χ
 ⊆₂-refl = ⊆-refl , ⊆-refl
+
 
 open import Frame.IFrame
 
@@ -162,11 +164,17 @@ UNF = record { unitK[_] = unitK }
 
 open import USet.Base 𝕎₂ K₂ _∈_ NF renaming (Cover' to Box')
 
+box' : {A : USet} → A ₀ ([] , Δ) → Box' A ₀ (Δ , Γ)
+box' x = (single _ _) , (λ { here → x })
+
 Nf' : Ty → USet
 Nf' a = uset (uncurry (_⨾_⊢Nf a)) (uncurry wkNf)
 
 Ne' : Ty → USet
 Ne' a = uset (uncurry (_⨾_⊢Ne a)) (uncurry wkNe)
+
+emb' : Ne' 𝕓 →̇ Nf' 𝕓
+emb' .apply = emb
 
 ⟦_⟧ : Ty → USet
 ⟦ 𝕓     ⟧ = Nf' 𝕓
@@ -207,6 +215,54 @@ eval {Δ} {Γ} (box {a = a} t)
   = mapCover' {A = ⟦ Δ ⟧c} {B = ⟦ a ⟧} (eval t ∘' ⟨ unitCover' {G = ⟦ Δ ⟧c } , id' ⟩') ∘' proj₁'
 eval {Δ} (letin {a = a} t u)
   = letin' {D = ⟦ Δ ⟧c} {A = ⟦ a ⟧} (eval t) (eval u)
+
+--
+-- Residualisation
+--
+
+collect : Box' (Nf' a) →̇ Nf' (◻ a)
+collect {a} = runCover {Nf' a} collectAux
+  where
+  collectAux : (k : K₂ Χ) (f : ForAllW k (Nf' a ₀_)) → Nf' (◻ a) ₀ Χ
+  collectAux (single _ _) f = box (f here)
+  collectAux (cons n k)   f = letin n (collectAux k (f ∘ there))
+
+register : Ne' (◻ a) →̇ Box' (Ne' a)
+register {a} .apply {Γ} n = cons n (single _ _) , λ { (there here) → var zero }
+
+reify   : ∀ a → ⟦ a ⟧ →̇ Nf' a
+reflect : ∀ a → Ne' a →̇ ⟦ a ⟧
+
+reify 𝕓       = id'
+reify (a ⇒ b) = fun λ f → lam (reify b .apply (f (⊆-refl , freshWk) (reflect a .apply (var zero))))
+reify (◻ a)   = collect ∘' mapCover' (reify a)
+
+reflect 𝕓       = emb'
+reflect (a ⇒ b) = fun λ n i x → reflect b .apply (app (uncurry wkNe i n) (reify a .apply x))
+reflect (◻ a)   = mapCover' (reflect a) ∘' register
+
+--
+-- NbE
+--
+
+idEnv : ∀ Χ → ⟦ Χ ⟧c₂ ₀ Χ
+idEnv (Δ , Γ) = idEnv1 Δ Γ , idEnv2 Δ Γ
+  where
+  idEnv1 : ∀ Δ Γ → Box' ⟦ Δ ⟧c ₀ (Δ , Γ)
+  idEnv1 []       Γ = single [] Γ , λ x → _
+  idEnv1 (Δ `, a) Γ = prBox' {G = Box' ⟦ Δ ⟧c ×' Box' ⟦ a ⟧} {A = ⟦ Δ ⟧c} {B = ⟦ a ⟧} proj₁' proj₂' .apply
+    (wk (Box' ⟦ Δ ⟧c) (freshWk , ⊆-refl) (idEnv1 Δ Γ)
+    , box' {A = ⟦ a ⟧} (reflect a .apply (var zero)))
+
+  idEnv2 : ∀ Δ Γ → ⟦ Γ ⟧c ₀ (Δ , Γ)
+  idEnv2 Δ []       = _
+  idEnv2 Δ (Γ `, a) = wk ⟦ Γ ⟧c (⊆-refl , freshWk) (idEnv2 Δ Γ) , reflect a .apply (var zero)
+
+quot : (⟦ Δ , Γ ⟧c₂ →̇ ⟦ a ⟧) → Δ ⨾ Γ ⊢Nf a
+quot {Δ} {Γ} {a} f = reify a .apply (f .apply (idEnv (Δ , Γ)))
+
+norm : Δ ⨾ Γ ⊢ a → Δ ⨾ Γ ⊢Nf a
+norm = quot ∘ eval
 
 module Equiv where
 
