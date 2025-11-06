@@ -92,8 +92,8 @@ module Join (WTNF : WeakTransitivity) where
 
 -- Multiplicative idempotent operator (Goldblatt10)
 module StrongJoin (RNF : Reachability) (WTNF : WeakTransitivity) where
-  open Strength RNF
-  open Join WTNF
+  open Strength RNF public
+  open Join WTNF public
 
   letin' : {G A B : USet} → (G →̇ 𝒞' A) → ((G ×' A) →̇ 𝒞' B) → (G →̇ 𝒞' B)
   letin' {G} {A} {B} t u = ((join' {B} ∘' map𝒞' u) ∘' strength' {G} {A}) ∘' ⟨ id' , t ⟩'

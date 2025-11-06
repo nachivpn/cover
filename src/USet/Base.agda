@@ -31,6 +31,9 @@ record USet : Set₁ where
 ⊤' : USet
 ⊤' = uset (const ⊤) _
 
+⊥' : USet
+⊥' = uset (const ⊥) (const ⊥-elim)
+
 _×'_ : USet → USet → USet
 (uset X wkX) ×' (uset Y wkY) = uset (λ w → X w × Y w) wk×
   where
@@ -53,7 +56,6 @@ _→'_ : USet → USet → USet
   wk→ i f = λ i' x → f (⊆-trans i i') x
 
 open USet renaming (Fam to _₀_) public
-
 
 record _→̇_ (X Y : USet) : Set where
   constructor fun
@@ -86,13 +88,16 @@ lam' {G = G} f .apply g i a = f .apply ((wk G i g) , a)
 app' : {G A B : USet} → G →̇ (A →' B) → G →̇ A → G →̇ B
 app' t u .apply g = t .apply g ⊆-refl (u .apply g)
 
+eval' : {A B : USet} → ((A →' B) ×' A) →̇ B
+eval' = app' proj₁' proj₂'
+
 inj₁' : {A B : USet} → A →̇ (A ⊎' B)
 inj₁' .apply = inj₁
 
 inj₂' : {A B : USet} → B →̇ (A ⊎' B)
 inj₂' .apply = inj₂
 
-[_,_]' : {A B C : USet} →  A →̇ C → B →̇ C → (A ⊎' B) →̇  C
+[_,_]' : {A B C : USet} → A →̇ C → B →̇ C → (A ⊎' B) →̇ C
 [ f , g ]' .apply = [ f .apply , g .apply ]
 
 curry' : {G A B : USet} → (G ×' A) →̇ B → G →̇ (A →' B)
@@ -106,3 +111,17 @@ x-right-assoc .apply ((a , b) , c) = a , (b , c)
 
 ×'-swap : {A B : USet} → (A ×' B) →̇ (B ×' A)
 ×'-swap = ⟨ proj₂' , proj₁' ⟩'
+
+_×'-map_ : {A B C D : USet} → A →̇ C → B →̇ D → (A ×' B) →̇ (C ×' D)
+f ×'-map g = ⟨ f ∘' proj₁' , g ∘' proj₂' ⟩'
+
+×'-distr-⊎'-forth : {A B C : USet} → (A ×' (B ⊎' C)) →̇ ((A ×' B) ⊎' (A ×' C))
+×'-distr-⊎'-forth .apply (a , inj₁ b) = inj₁ (a , b)
+×'-distr-⊎'-forth .apply (a , inj₂ c) = inj₂ (a , c)
+
+×'-distr-⊎'-back : {A B C : USet} → ((A ×' B) ⊎' (A ×' C)) →̇ (A ×' (B ⊎' C))
+×'-distr-⊎'-back .apply (inj₁ (a , b)) = a , inj₁ b
+×'-distr-⊎'-back .apply (inj₂ (a , c)) = a , inj₂ c
+
+⊥'-elim : {A : USet} → ⊥' →̇ A
+⊥'-elim .apply = ⊥-elim
