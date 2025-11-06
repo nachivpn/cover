@@ -68,8 +68,6 @@ wkNf i (tryunl n m1 m2) = tryunl (wkNe i n) (wkNf (keep i) m1) (wkNf (keep i) m2
 -- Semantics
 --
 
-open import Frame.NFrame 𝕎
-
 -- the concrete residualising monad (for illustration only)
 data Err (A : Ctx → Set) : Ctx → Set where
   return   : A Γ → Err A Γ
@@ -89,14 +87,14 @@ data _∈_ (Δ : Ctx) : K Γ → Set where
   right : {n : Ne Γ (𝕞 a)} {k : K (Γ `, a)} {k' : K (Γ `, 𝕓)}
     → Δ ∈ k' → Δ ∈ branch n k k'
 
+open import Frame.NFrame 𝕎 K _∈_
+
 wkK : Γ ⊆ Γ' → K Γ → K Γ'
 wkK i (single _)       = single _
 wkK i (nil n)          = nil (wkNe i n)
 wkK i (branch n k1 k2) = branch (wkNe i n) (wkK (keep i) k1) (wkK (keep i) k2)
 
-open {-NF.-}Core K _∈_
-
-wkK-resp-⊆ : (i : Γ ⊆ Γ') (k : K Γ) → k ⊆k wkK i k
+wkK-resp-⊆ : (i : Γ ⊆ Γ') (k : K Γ) → k ≼ wkK i k
 wkK-resp-⊆ i (single _) here
   = _ , here , i
 wkK-resp-⊆ i (nil x) ()
@@ -107,51 +105,52 @@ wkK-resp-⊆ i (branch x k1 k2) (right p)
   = let (Δ , p' , i') = wkK-resp-⊆ (keep i) k2 p in
      (Δ , right p' , i')
 
-NF : NFrame
-NF = record { wkK = wkK ; wkK-resp-⊆ = wkK-resp-⊆ }
+NF : Refinement
+NF = record { wkN = wkK ; wkN-refines = wkK-resp-⊆ }
 
 reachable : (k : K Γ) → ForAllW k (Γ ⊆_)
 reachable (single _)       here      = ⊆-refl
 reachable (branch n k1 k2) (left p)  = freshWk ∙ reachable k1 p
 reachable (branch n k1 k2) (right p) = freshWk ∙ reachable k2 p
 
-RNF : Reachable NF
+RNF : Reachability
 RNF = record { reachable = reachable }
 
-SPNF : StrictlyPointed NF
-SPNF = record
-  { pointK[_]         = single
-  ; pointK-bwd-member = λ { here → ≡-refl }
+INF : Identity
+INF = record
+  { idN[_]         = single
+  ; idN-bwd-member = λ { here → ≡-refl }
   }
 
-PNF = StrictlyPointed.pointed SPNF
+WINF = Identity.weakIdentity INF
 
-joinK : (k : K Γ) → ForAllW k K → K Γ
-joinK (single _)       h = h here
-joinK (nil n)          h = nil n
-joinK (branch n k1 k2) h = branch n (joinK k1 (h ∘ left)) (joinK k2 (h ∘ right))
+transK : (k : K Γ) → ForAllW k K → K Γ
+transK (single _)       h = h here
+transK (nil n)          h = nil n
+transK (branch n k1 k2) h = branch n (transK k1 (h ∘ left)) (transK k2 (h ∘ right))
 
-joinK-bwd-member  : (k : K Γ) (h : ForAllW k K)
-  → ForAllW (joinK k h) (λ Δ → Exists∈ k (λ Γ∈k → Δ ∈ h Γ∈k))
-joinK-bwd-member  (single Γ)      h p
+transK-bwd-member  : (k : K Γ) (h : ForAllW k K)
+  → ForAllW (transK k h) (λ Δ → Exists∈ k (λ Γ∈k → Δ ∈ h Γ∈k))
+transK-bwd-member  (single Γ)      h p
   = Γ , here , p
-joinK-bwd-member  (branch x k k') h (left p)  =
-  let (vl , p' , pl) = joinK-bwd-member  k (h ∘ left) p
+transK-bwd-member  (branch x k k') h (left p)  =
+  let (vl , p' , pl) = transK-bwd-member  k (h ∘ left) p
   in vl , left p' , pl
-joinK-bwd-member  (branch x k k') h (right p) =
-  let (vl , p' , pr) = joinK-bwd-member  k' (h ∘ right) p
+transK-bwd-member  (branch x k k') h (right p) =
+  let (vl , p' , pr) = transK-bwd-member  k' (h ∘ right) p
   in vl , right p' , pr
 
-SJNF : StrictlyJoinable NF
-SJNF = record
-  { joinK            = joinK
-  ; joinK-bwd-member = joinK-bwd-member
+TNF : Transitivity
+TNF = record
+  { transN            = transK
+  ; transN-bwd-member = transK-bwd-member
   }
 
-JNF = StrictlyJoinable.joinable SJNF
+WTNF = Transitivity.weakTransitivity TNF
 
--- imports USet, Cover' (the derived cover monad), etc.
-open import USet.Base 𝕎 K _∈_ NF renaming (Cover' to Err')
+-- imports USet, 𝒞' (the derived cover monad), etc.
+open import USet.Base 𝕎
+open import USet.Cover 𝕎 K _∈_ NF renaming (𝒞' to Err')
 
 Nf' : Ty → USet
 Nf' a = uset (λ Γ → Nf Γ a) wkNf
@@ -176,10 +175,10 @@ emb' .apply = emb
 --
 
 return' : {G A : USet} → G →̇ A → G →̇ Err' A
-return' = Return.return' PNF
+return' = Return.return' WINF
 
 letin' : {G A B : USet} → (G →̇ Err' A) → ((G ×' A) →̇ Err' B) → (G →̇ Err' B)
-letin' {G} {A} {B} = Letin.letin' RNF JNF {G} {A} {B}
+letin' {G} {A} {B} = StrongJoin.letin' RNF WTNF {G} {A} {B}
 
 throw' : {G A : USet} → G →̇ Ne' 𝕓 → G →̇ Err' A
 throw' t = fun λ g → nil (t .apply g) , λ { () }
@@ -213,7 +212,7 @@ eval (letin {b = b} t u) = letin' {B = ⟦ b ⟧} (eval t) (eval u)
 --
 
 collect : Err' (Nf' a) →̇ Nf' (𝕞 a)
-collect {a} = runCover {Nf' a} collectAux
+collect {a} =  run𝒞' {Nf' a} collectAux
   where
   collectAux : (k : K Γ) (f : ForAllW k (Nf' a ₀_)) → Nf' (𝕞 a) ₀ Γ
   collectAux (single _)       f = return (f here)
@@ -228,11 +227,11 @@ reflect : ∀ a → Ne' a →̇ ⟦ a ⟧
 
 reify 𝕓       = emb'
 reify (a ⇒ b) = fun λ f → lam (reify b .apply (f freshWk (reflect a .apply (var zero))))
-reify (𝕞 a)   = collect ∘' mapCover' (reify a)
+reify (𝕞 a)   = collect ∘' map𝒞' (reify a)
 
 reflect 𝕓       = id'
 reflect (a ⇒ b) = fun λ n i x → reflect b .apply (app (wkNe i n) (reify a .apply x))
-reflect (𝕞 a)   = mapCover' (reflect a) ∘' register
+reflect (𝕞 a)   = map𝒞' (reflect a) ∘' register
 
 --
 -- NbE
