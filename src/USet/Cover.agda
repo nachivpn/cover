@@ -15,17 +15,12 @@ module USet.Cover
   where
 
 open import Function using (id ; const ; _∘_)
-open import Relation.Binary.PropositionalEquality
-  using (_≡_; subst; cong; cong₂)
-  renaming (refl to ≡-refl; sym to ≡-sym; trans to ≡-trans)
-open import Relation.Binary.PropositionalEquality.Properties
-  using () renaming (isEquivalence to ≡-equiv)
 
-open import Data.Unit
+--open import Data.Unit
 open import Data.Product
   using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂ ; uncurry)
 open import Data.Empty
-open import Data.Sum
+--open import Data.Sum
 
 private
   variable
