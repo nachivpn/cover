@@ -10,8 +10,8 @@ module USet.Cover
   (N   : W → Set)
   (_∈_ : (v : W) {w : W} → N w → Set)
   (let open NF 𝕎 N _∈_)
-  (CF  : Refinement) -- CF for "Covering Frame"
-  (let open Refinement CF)
+  (MNF  : Refinement) -- MNF for "Monotonic Neighborhood Frame"
+  (let open Refinement MNF)
   where
 
 open import Function using (id ; const ; _∘_)
@@ -72,8 +72,8 @@ module Strength (RNF : Reachability) where
   swapped-strength' {A} {B} = (map𝒞' (×'-swap {B} {A}) ∘' strength' {B} {A}) ∘' ×'-swap {𝒞' A} {B}
 
 -- Inflationary (Goldblatt10)
-module Return (INF : WeakIdentity) where
-  open WeakIdentity INF
+module Return (WINF : WeakIdentity) where
+  open WeakIdentity WINF
 
   point' : {A : USet} → A →̇ 𝒞' A
   point' {A} .apply {w} x = idN[ w ] , λ p → wk A (idN-bwd-reachable p) x
@@ -82,8 +82,8 @@ module Return (INF : WeakIdentity) where
   return' = point' ∘'_
 
 -- Idempotent (Goldblatt10)
-module Join (TNF : WeakTransitivity) where
-  open WeakTransitivity TNF
+module Join (WTNF : WeakTransitivity) where
+  open WeakTransitivity WTNF
 
   join' : {A : USet} → 𝒞' (𝒞' A) →̇ 𝒞' A
   join' {A} .apply {w} (n , h) = transN n (proj₁ ∘ h) , λ {v'} v∈jN →
@@ -91,9 +91,9 @@ module Join (TNF : WeakTransitivity) where
     in wk A v⊆v' (h u∈n .proj₂ v∈h-)
 
 -- Multiplicative idempotent operator (Goldblatt10)
-module StrongJoin (RNF : Reachability) (JNF : WeakTransitivity) where
+module StrongJoin (RNF : Reachability) (WTNF : WeakTransitivity) where
   open Strength RNF
-  open Join JNF
+  open Join WTNF
 
   letin' : {G A B : USet} → (G →̇ 𝒞' A) → ((G ×' A) →̇ 𝒞' B) → (G →̇ 𝒞' B)
   letin' {G} {A} {B} t u = ((join' {B} ∘' map𝒞' u) ∘' strength' {G} {A}) ∘' ⟨ id' , t ⟩'
@@ -102,18 +102,18 @@ module StrongJoin (RNF : Reachability) (JNF : WeakTransitivity) where
   ×'-distr-back' {A} {B} = (join' {A ×' B} ∘' map𝒞' (swapped-strength' {A} {B})) ∘' strength' {𝒞' A} {B}
 
 -- Closure operator (Goldblatt10)
-module Monad (INF : WeakIdentity) (JNF : WeakTransitivity) where
-  open Return INF public
-  open Join JNF public
+module Monad (WINF : WeakIdentity) (WTNF : WeakTransitivity) where
+  open Return WINF public
+  open Join WTNF public
 
 -- Nucleus (see Lemma 2.1 in Goldblatt10)
-module StrongMonad (INF : WeakIdentity) (RNF : Reachability) (JNF : WeakTransitivity) where
-  open Return INF public
-  open StrongJoin RNF public
+module StrongMonad (RNF : Reachability) (WINF : WeakIdentity) (WTNF : WeakTransitivity) where
+  open Return WINF public
+  open StrongJoin RNF WTNF public
 
 -- Multiplicative (Goldblatt10)
-module ×'-distr (CNF : WeaklyClosedUnderInt) where
-  open WeaklyClosedUnderInt CNF
+module ×'-distr (WCNF : WeaklyClosedUnderInt) where
+  open WeaklyClosedUnderInt WCNF
 
   ×'-distr-back' : {A B : USet} → (𝒞' A ×' 𝒞' B) →̇ 𝒞' (A ×' B)
   ×'-distr-back' {A} {B} .apply ((n1 , f1) , (n2 , f2)) = (n1 ⊗ n2) , λ p →
@@ -127,8 +127,8 @@ module ×'-distr (CNF : WeaklyClosedUnderInt) where
     → (𝒞' D ×' G) →̇ B
   letin' {D} {G} {A} {B} t u = u ∘' ⟨ pr𝒞' {A = D} {B = A} proj₁' t , proj₂' ⟩'
 
-module ⊤'-distr (NEF : NonEmpty) where
-  open NonEmpty NEF
+module ⊤'-distr (NENF : NonEmpty) where
+  open NonEmpty NENF
 
   ⊤'-distr-back' : ⊤' →̇ 𝒞' ⊤'
   ⊤'-distr-back' .apply _ = unitN[ _ ] , _
