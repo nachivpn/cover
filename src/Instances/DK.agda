@@ -105,25 +105,23 @@ K₂ = uncurry K
 wkK₂ : Χ ⊆₂ Χ' → K₂ Χ → K₂ Χ'
 wkK₂ = uncurry wkK
 
-open import Frame.NFrame 𝕎₂
-
 _∈_ : Ctx₂ → ∀ {Χ} → K₂ Χ → Set
 Χ ∈ k = uncurry (_⨾_∈ k) Χ
 
-open {-CF.-}Core K₂ _∈_
+open import Frame.NFrame 𝕎₂ K₂ _∈_
 
-wkK-resp-⊆ : (i1 : Δ ⊆ Δ') (i2 : Γ ⊆ Γ') (k : K Δ Γ)
-  → k ⊆k wkK i1 i2 k
-wkK-resp-⊆ i1 i2 (single _ _) here      = _ , here , base , i1
-wkK-resp-⊆ i1 i2 (cons x k)   (there p) =
-  let (_ , p' , i1' , i2') = wkK-resp-⊆ (keep i1) i2 k p
+wkK-refines : (i1 : Δ ⊆ Δ') (i2 : Γ ⊆ Γ') (k : K Δ Γ)
+  → k ≼ wkK i1 i2 k
+wkK-refines i1 i2 (single _ _) here      = _ , here , base , i1
+wkK-refines i1 i2 (cons x k)   (there p) =
+  let (_ , p' , i1' , i2') = wkK-refines (keep i1) i2 k p
   in _ , there p' , i1' , i2'
 
-wkK₂-resp-⊆₂ : (i : Χ ⊆₂ Χ') (k : K₂ Χ) → k ⊆k wkK₂ i k
-wkK₂-resp-⊆₂ = uncurry wkK-resp-⊆
+wkK₂-refines₂ : (i : Χ ⊆₂ Χ') (k : K₂ Χ) → k ≼ wkK₂ i k
+wkK₂-refines₂ = uncurry wkK-refines
 
-NF : NFrame
-NF = record { wkK = wkK₂ ; wkK-resp-⊆ = wkK₂-resp-⊆₂ }
+NF : Refinement
+NF = record { wkN = wkK₂ ; wkN-refines = wkK₂-refines₂ }
 
 _⊗_ : K Δ Γ → K Δ Γ → K Δ Γ
 single Δ Γ ⊗ k' = k'
@@ -148,21 +146,22 @@ cons x k   ⊗ k' = cons x (k ⊗ wkK freshWk ⊆-refl k')
   , p    , ⊆₂-refl
 ⊗-bwd-reachable (cons x k1) k2       {Ξ , Θ}     (there p)
   = let ((Δ1 , Γ1) , (Δ2 , Γ2) , p1 , i1 , p2 , i2) = ⊗-bwd-reachable k1 (wkK freshWk ⊆-refl k2) p
-        ((Δ2' , Γ2') , p2' , i2') = wkK-resp-⊆ freshWk ⊆-refl k2 p2
+        ((Δ2' , Γ2') , p2' , i2') = wkK-refines freshWk ⊆-refl k2 p2
     in _ , _
       , there p1 , i1
       , p2' , ⊆₂-trans i2' i2
 
-MNF : Magma NF
-MNF = record { _⊗_ = _⊗_ ; ⊗-bwd-reachable = ⊗-bwd-reachable }
+WCNF : WeaklyClosedUnderInt
+WCNF = record { _⊗_ = _⊗_ ; ⊗-bwd-reachable = ⊗-bwd-reachable }
 
 unitK : ∀ Χ → K₂ Χ
 unitK Χ = single _ _
 
-UNF : Unital NF
-UNF = record { unitK[_] = unitK }
+UNF : NonEmpty
+UNF = record { unitN[_] = unitK }
 
-open import USet.Base 𝕎₂ K₂ _∈_ NF renaming (Cover' to Box')
+open import USet.Base 𝕎₂
+open import USet.Cover 𝕎₂ K₂ _∈_ NF renaming (𝒞' to Box')
 
 box' : {A : USet} → A ₀ ([] , Δ) → Box' A ₀ (Δ , Γ)
 box' x = (single _ _) , (λ { here → x })
@@ -196,13 +195,13 @@ letin' : {D G A B : USet}
   → (Box' D ×' G) →̇ Box' A
   → (Box' (D ×' A) ×' G) →̇ B
   → (Box' D ×' G) →̇ B
-letin' {D} {G} {A} = ×'-distr.letin' MNF {D = D} {A = A}
+letin' {D} {G} {A} = ×'-distr.letin' WCNF {D = D} {A = A}
 
 prBox' : {G A B : USet} → G →̇ Box' A → G →̇ Box' B → G →̇ Box' (A ×' B)
-prBox' {G} {A} {B} = ×'-distr.prCover' MNF {G = G} {A = A} {B = B}
+prBox' {G} {A} {B} = ×'-distr.pr𝒞' WCNF {G = G} {A = A} {B = B}
 
-unitCover' : {G : USet} → G →̇ Box' ⊤'
-unitCover' = ⊤'-distr.unitCover' UNF
+unitBox' : {G : USet} → G →̇ Box' ⊤'
+unitBox' = ⊤'-distr.unit𝒞' UNF
 
 eval : Δ ⨾ Γ ⊢ a → ⟦ Δ , Γ ⟧c₂ →̇ ⟦ a ⟧
 eval (var x)
@@ -212,7 +211,7 @@ eval (lam {a = a} {b} t)
 eval (app t u)
   = app' (eval t) (eval u)
 eval {Δ} {Γ} (box {a = a} t)
-  = mapCover' {A = ⟦ Δ ⟧c} {B = ⟦ a ⟧} (eval t ∘' ⟨ unitCover' {G = ⟦ Δ ⟧c } , id' ⟩') ∘' proj₁'
+  = map𝒞' {A = ⟦ Δ ⟧c} {B = ⟦ a ⟧} (eval t ∘' ⟨ unitBox' {G = ⟦ Δ ⟧c } , id' ⟩') ∘' proj₁'
 eval {Δ} (letin {a = a} t u)
   = letin' {D = ⟦ Δ ⟧c} {A = ⟦ a ⟧} (eval t) (eval u)
 
@@ -221,7 +220,7 @@ eval {Δ} (letin {a = a} t u)
 --
 
 collect : Box' (Nf' a) →̇ Nf' (◻ a)
-collect {a} = runCover {Nf' a} collectAux
+collect {a} = run𝒞' {Nf' a} collectAux
   where
   collectAux : (k : K₂ Χ) (f : ForAllW k (Nf' a ₀_)) → Nf' (◻ a) ₀ Χ
   collectAux (single _ _) f = box (f here)
@@ -235,11 +234,11 @@ reflect : ∀ a → Ne' a →̇ ⟦ a ⟧
 
 reify 𝕓       = id'
 reify (a ⇒ b) = fun λ f → lam (reify b .apply (f (⊆-refl , freshWk) (reflect a .apply (var zero))))
-reify (◻ a)   = collect ∘' mapCover' (reify a)
+reify (◻ a)   = collect ∘' map𝒞' (reify a)
 
 reflect 𝕓       = emb'
 reflect (a ⇒ b) = fun λ n i x → reflect b .apply (app (uncurry wkNe i n) (reify a .apply x))
-reflect (◻ a)   = mapCover' (reflect a) ∘' register
+reflect (◻ a)   = map𝒞' (reflect a) ∘' register
 
 --
 -- NbE
@@ -288,4 +287,4 @@ module Equiv where
   fromAux {A} (cons x k)   f = letbox x (fromAux {A} k (f ∘ there))
 
   from : {A : USet} → Box' A →̇ 𝒞' A
-  from {A} = runCover {A} (fromAux {A})
+  from {A} = run𝒞' {A} (fromAux {A})
