@@ -64,6 +64,10 @@ record LUSet : Set₁ where
   field
     localize : 𝒞' 𝒳 →̇ 𝒳
 
+-- Freely localize an arbitrary USet
+FromUSet : USet → LUSet
+FromUSet A = luset (𝒞' A) (join' {A})
+
 open LUSet
 
 --
@@ -106,10 +110,6 @@ luset A lA →₊ luset B lB = luset (A →' B) localize-→'
   localize-→' = lam' (lB
     ∘' (map𝒞' {(A →' B) ×' A} {B} eval'
     ∘' swapped-strength' {A →' B} {A}))
-
--- Freely localize an arbitrary USet
-FromUSet : USet → LUSet
-FromUSet A = luset (𝒞' A) (join' {A})
 
 --
 -- Falsity
