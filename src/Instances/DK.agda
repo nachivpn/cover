@@ -1,7 +1,7 @@
 {-# OPTIONS --safe #-}
 
 -- Dual Context K calculus
-module Instances.Wish.DK where
+module Instances.DK where
 
 open import Data.Product
   using (Σ; ∃; ∃₂; _×_; _,_; -,_ ; proj₁ ; proj₂ ; curry ; uncurry)
@@ -207,7 +207,7 @@ eval : Δ ⨾ Γ ⊢ a → ⟦ Δ , Γ ⟧c₂ →̇ ⟦ a ⟧
 eval (var x)
   = evalVar x ∘' proj₂'
 eval (lam {a = a} {b} t)
-  = lam' {A = ⟦ a ⟧} {B = ⟦ b ⟧} (eval t ∘' x-right-assoc)
+  = lam' {A = ⟦ a ⟧} {B = ⟦ b ⟧} (eval t ∘' x'-right-assoc)
 eval (app t u)
   = app' (eval t) (eval u)
 eval {Δ} {Γ} (box {a = a} t)

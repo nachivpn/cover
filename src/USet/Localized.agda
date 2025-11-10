@@ -20,7 +20,7 @@ open Refinement MNF
 open Identity INF
 open Transitivity TNF
 
-open import Function using (id ; const ; _∘_)
+open import Function using (id ; const ; _∘_ ; flip)
 open import Relation.Binary.PropositionalEquality
   using (_≡_; subst; cong; cong₂)
   renaming (refl to ≡-refl; sym to ≡-sym; trans to ≡-trans)
@@ -29,9 +29,14 @@ open import Relation.Binary.PropositionalEquality.Properties
 
 open import Data.Unit
 open import Data.Product
-  using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂ ; uncurry)
+  using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂ ; curry ; uncurry)
 open import Data.Empty
 open import Data.Sum
+
+open import Relation.Binary.Lattice.Bundles using (HeytingAlgebra)
+open import Relation.Binary.Lattice.Structures using (IsHeytingAlgebra)
+open import Relation.Binary.Structures using (IsPreorder ; IsEquivalence)
+open import Level using (0ℓ ; suc) ; private 1ℓ = suc 0ℓ
 
 open import USet.Base 𝕎
 open import USet.Cover 𝕎 N _∈_ MNF
@@ -45,11 +50,11 @@ WTNF = Transitivity.weakTransitivity TNF
 
 open StrongMonad RNF WINF WTNF
 
--- Localized Upper set
+-- Localized upper set
 record LUSet : Set₁ where
   constructor luset
 
-  -- underlying upper set
+  -- upper set
   field
     𝒳 : USet
 
@@ -61,17 +66,38 @@ record LUSet : Set₁ where
 
 open LUSet
 
+--
+-- Entailment
+--
+
 _→̇₊_ : LUSet → LUSet → Set
 X →̇₊ Y = X .𝒳 →̇ Y .𝒳
 
+→̇₊-refl = id'
+
+→̇₊-trans : {A B C : LUSet} → A →̇₊ B → B →̇₊ C → A →̇₊ C
+→̇₊-trans = flip _∘'_
+
+--
+-- Truth
+--
+
 ⊤₊ : LUSet
 ⊤₊ = luset ⊤' (fun (const tt))
+
+--
+-- Conjunction
+--
 
 _×₊_ : LUSet → LUSet → LUSet
 luset A lA ×₊ luset B lB = luset (A ×' B) localize-×'
   where
   localize-×' : 𝒞' (A ×' B) →̇ (A ×' B)
   localize-×' = (lA ×'-map lB) ∘' ×'-distr-forth' {A} {B}
+
+--
+-- Implication/Exponential
+--
 
 _→₊_ : LUSet → LUSet → LUSet
 luset A lA →₊ luset B lB = luset (A →' B) localize-→'
@@ -85,14 +111,22 @@ luset A lA →₊ luset B lB = luset (A →' B) localize-→'
 FromUSet : USet → LUSet
 FromUSet A = luset (𝒞' A) (join' {A})
 
+--
+-- Falsity
+--
+
 ⊥₊ : LUSet
 ⊥₊ = FromUSet ⊥'
 
-_⊎₊_ : LUSet → LUSet → LUSet
-luset A _ ⊎₊ luset B _  = FromUSet (A ⊎' B)
-
 ⊥₊-elim : {X : LUSet} → ⊥₊ →̇₊ X
 ⊥₊-elim {X} = X .localize ∘' map𝒞' {⊥'} {X .𝒳} ⊥'-elim
+
+--
+-- Disjunction
+--
+ 
+_⊎₊_ : LUSet → LUSet → LUSet
+luset A _ ⊎₊ luset B _  = FromUSet (A ⊎' B)
 
 inj₁₊ : {X Y : LUSet} → X →̇₊ (X ⊎₊ Y)
 inj₁₊ {X} {Y} = return' {X .𝒳} {X .𝒳 ⊎' Y .𝒳} inj₁'
@@ -102,6 +136,10 @@ inj₂₊ {X} {Y} = return' {Y .𝒳} {X .𝒳 ⊎' Y .𝒳} inj₂'
 
 [_,_]₊ : {X Y Z : LUSet} →  X →̇₊ Z → Y →̇₊ Z → (X ⊎₊ Y) →̇₊ Z
 [_,_]₊ {X} {Y} {Z} f g = Z .localize ∘' map𝒞' {X .𝒳 ⊎' Y .𝒳} {Z .𝒳} [ f , g ]'
+
+--
+-- Distributivity (of conjunction over disjunction)
+--
 
 ×₊-distr-⊎₊-forth : {X Y Z : LUSet} → (X ×₊ (Y ⊎₊ Z)) →̇₊ ((X ×₊ Y) ⊎₊ (X ×₊ Z))
 ×₊-distr-⊎₊-forth {luset A lA} {luset B lB} {luset C lC} =
@@ -117,3 +155,53 @@ inj₂₊ {X} {Y} = return' {Y .𝒳} {X .𝒳 ⊎' Y .𝒳} inj₂'
 
 -- Note: observe the "localize after map𝒞" pattern
 -- in ⊥₊-elim, [_,_]₊ and ×₊-distr-⊎₊-back.
+
+--
+-- Localized upper sets form a Heyting algebra
+--
+
+_↔̇₊_ : LUSet → LUSet → Set
+A ↔̇₊ B = (A →̇₊ B) × (B →̇₊ A)
+
+↔̇₊-isEquivalence : IsEquivalence _↔̇₊_
+↔̇₊-isEquivalence = record
+  { refl  = →̇-refl , →̇-refl
+  ; sym   = λ p → (proj₂ p , proj₁ p)
+  ; trans = λ p q → →̇-trans (proj₁ p) (proj₁ q) , →̇-trans (proj₂ q) (proj₂ p)
+  }
+
+↔̇₊-isPreorder : IsPreorder _↔̇₊_ _→̇₊_
+↔̇₊-isPreorder = record
+  { isEquivalence = ↔̇₊-isEquivalence
+  ; reflexive     = proj₁
+  ; trans         = →̇-trans
+  }
+
+LUSetHAisHA : IsHeytingAlgebra _↔̇₊_ _→̇₊_ _⊎₊_ _×₊_ _→₊_ ⊤₊ ⊥₊
+LUSetHAisHA = record
+  { isBoundedLattice = record
+    { isLattice = record
+      { isPartialOrder = record
+        { isPreorder = ↔̇₊-isPreorder
+        ; antisym    = curry id
+        }
+      ; supremum = λ A B → inj₁₊ {A} {B} , inj₂₊ {A} {B} , λ C → [_,_]₊ {A} {B} {C}
+      ; infimum = λ A B → proj₁' , proj₂' , λ C → ⟨_,_⟩' }
+    ; maximum = λ _ → unit'
+    ; minimum = λ A → ⊥₊-elim {A}
+    }
+  ; exponential = λ G A B → curry' , uncurry'
+  }
+  
+LUSetHA : HeytingAlgebra 1ℓ 0ℓ 0ℓ
+LUSetHA = record
+  { Carrier          = LUSet
+  ; _≈_              = _↔̇₊_
+  ; _≤_              = _→̇₊_
+  ; _∨_              = _⊎₊_
+  ; _∧_              = _×₊_
+  ; _⇨_              = _→₊_
+  ; ⊤                = ⊤₊
+  ; ⊥                = ⊥₊
+  ; isHeytingAlgebra = LUSetHAisHA
+  }
