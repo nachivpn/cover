@@ -44,17 +44,6 @@ wkK-refines i (branch x k1 k2) (right p)
   = let (Δ , p' , i') = wkK-refines (keep i) k2 p in
      (Δ , right p' , i')
 
-NF : Refinement
-NF = record { wkN = wkK ; wkN-refines = wkK-refines }
-
-INF : Identity
-INF = record
-  { idN[_]         = leaf
-  ; idN-bwd-member = λ { here → ≡-refl }
-  }
-
-WINF = Identity.weakIdentity INF
-
 reachable : (k : K Γ) → ForAllW k (Γ ⊆_)
 reachable (leaf _)         here
   = ⊆-refl
@@ -63,9 +52,6 @@ reachable (branch x k1 k2) (left p)
   = freshWk ∙ reachable k1 p
 reachable (branch x k1 k2) (right p)
   = freshWk ∙ reachable k2 p
-
-RNF : Reachability
-RNF = record { reachable = reachable }
 
 transK : (k : K Γ) → ForAllW k K → K Γ
 transK (leaf _)        f = f here
@@ -84,18 +70,30 @@ transK-bwd-member (branch x k k') h (right p) =
   let (vl , p' , pr) = transK-bwd-member k' (h ∘ right) p
   in vl , right p' , pr
 
-TNF : Transitivity
-TNF = record
-  { transN            = transK
-  ; transN-bwd-member = transK-bwd-member
+Nuc : Nuclear
+Nuc = record
+  { refinement   = record
+    { wkN         = wkK
+    ; wkN-refines = wkK-refines
+    }
+  ; reachability = record
+    { reachable = reachable }
+  ; identity     = record
+    { idN[_]         = leaf
+    ; idN-bwd-member = λ { here → ≡-refl }
+    }
+  ; transitivity = record
+    { transN            = transK
+    ; transN-bwd-member = transK-bwd-member
+    }
   }
 
-WTNF = Transitivity.weakTransitivity TNF
-
 open import USet.Base 𝕎
-open import USet.Cover 𝕎 K _∈_ NF renaming (𝒞' to 𝒥')
-open import USet.Localized 𝕎 K _∈_ NF RNF INF TNF
-  renaming (LUSetHA to ℛ) -- ℛ for "residualising model"
+open import USet.Localized 𝕎 K _∈_ Nuc renaming
+  (𝒞' to 𝒥'
+  ; map𝒞' to map𝒥'
+  ; run𝒞' to run𝒥'
+  ; LUSetHA to ℛ) -- ℛ for "residualising model"
 
 Tm' : Form → USet
 Tm' a = uset (_⊢ a) wkTm
@@ -107,7 +105,7 @@ Tm' a = uset (_⊢ a) wkTm
 ∨-I2' .apply = ∨-I2
 
 Tm₊ : Form → LUSet
-Tm₊ a = luset (Tm' a) (run𝒞' {Tm' a} localizeTm)
+Tm₊ a = luset (Tm' a) (run𝒥' {Tm' a} localizeTm)
   where
   localizeTm : (k : K Γ) → ForAllW k (_⊢ a) → Γ ⊢ a
   localizeTm (leaf _)         h = h here
@@ -126,8 +124,8 @@ reify (𝕡 i)   = id'
 reify ⊤       = fun (λ _ → ⊤-I)
 reify (a ⇒ b) = fun λ x → ⇒-I (reify b .apply (x freshWk (reflect a .apply (hyp zero))))
 reify (a ∧ b) = fun λ x → ∧-I (reify a .apply (proj₁ x)) (reify b .apply (proj₂ x))
-reify ⊥       = Tm₊ ⊥ .localize ∘' map𝒞' (⊥'-elim {Tm' ⊥})
-reify (a ∨ b) = Tm₊ (a ∨ b) .localize ∘' map𝒞' [ ∨-I1' ∘' reify a  , ∨-I2' ∘' reify b ]'
+reify ⊥       = Tm₊ ⊥ .localize ∘' map𝒥' (⊥'-elim {Tm' ⊥})
+reify (a ∨ b) = Tm₊ (a ∨ b) .localize ∘' map𝒥' [ ∨-I1' ∘' reify a  , ∨-I2' ∘' reify b ]'
 
 reflect (𝕡 i)   = id'
 reflect ⊤       = unit'

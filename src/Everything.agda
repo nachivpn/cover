@@ -1,6 +1,7 @@
 open import USet.Base
 open import USet.Cover
 open import USet.Localized
+open import USet.Lax.Relational
 
 open import Context
 

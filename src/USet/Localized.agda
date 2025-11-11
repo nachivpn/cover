@@ -10,15 +10,15 @@ module USet.Localized
   (N   : W → Set)
   (_∈_ : (v : W) {w : W} → N w → Set)
   (let open NF 𝕎 N _∈_)
-  (MNF  : Refinement)
-  (RNF  : Reachability)
-  (INF  : Identity)
-  (TNF  : Transitivity)
+  (Nuc  : {-NF.-} Nuclear)
   where
 
-open Refinement MNF
-open Identity INF
-open Transitivity TNF
+open Nuclear Nuc
+
+MNF = Nuc .Nuclear.refinement
+RNF = Nuc .Nuclear.reachability
+INF = Nuc .Nuclear.identity
+TNF = Nuc .Nuclear.transitivity
 
 open import Function using (id ; const ; _∘_ ; flip)
 open import Relation.Binary.PropositionalEquality
@@ -39,7 +39,7 @@ open import Relation.Binary.Structures using (IsPreorder ; IsEquivalence)
 open import Level using (0ℓ ; suc) ; private 1ℓ = suc 0ℓ
 
 open import USet.Base 𝕎
-open import USet.Cover 𝕎 N _∈_ MNF
+open import USet.Cover 𝕎 N _∈_ MNF public
 
 private
   variable
