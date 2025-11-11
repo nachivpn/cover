@@ -2,6 +2,7 @@
 
 open import Frame.IFrame
 import Frame.NFrame as NF
+import USet.Localized as USetLoc
 
 open import Data.Product
   using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂ ; curry ; uncurry)
@@ -24,30 +25,26 @@ private
 
 infix 21 ⟨R⟩'_
 
+-- Lax modality
 ⟨R⟩'_ : USet → USet
 ⟨R⟩' A = uset (λ w → ∃ λ v → R w v × A ₀ v) wkR
   where
   wkR : w ⊆ w' → ∃ (λ v → R w v × (A ₀ v)) → ∃ (λ v' → R w' v' × (A ₀ v'))
   wkR i (v , r , x) = let (v' , r' , i') = R-confluence i r in v' , r' , (wk A i' x)
 
+map⟨R⟩' : {A B : USet} → (f : A →̇ B) → ⟨R⟩' A →̇ ⟨R⟩' B
+map⟨R⟩' f .apply (v , r , x) = v , r , f .apply x
+
 module Localized
   (N   : W → Set)
   (_∈_ : (v : W) {w : W} → N w → Set)
   (let open NF 𝕎i N _∈_)
   (Nuc  : Nuclear)
-  (R-localize : {A : USet} {w : W}
-    → (n : N w) → ForAllW n (⟨R⟩' A ₀_)
-    → ∃ λ u → R w u × Σ (N u) (AllForW (A ₀_)))
+  (let open USetLoc 𝕎i N _∈_ Nuc)
+  (R-localize : {A : USet} → 𝒥' (⟨R⟩' A) →̇ (⟨R⟩' 𝒥' A))
   where
-
-  open import USet.Localized 𝕎i N _∈_ Nuc
 
   open LUSet
 
   ⟨R⟩₊_ : LUSet → LUSet
-  ⟨R⟩₊ (luset A lA) = luset (⟨R⟩' A) localizeR
-    where
-    localizeR : 𝒞' (⟨R⟩' A) →̇ ⟨R⟩' A
-    localizeR .apply (n , h) =
-      let (u , r , cA) = R-localize {A} n h
-      in u , r , lA .apply cA
+  ⟨R⟩₊ (luset A lA) = luset (⟨R⟩' A) (map⟨R⟩' lA ∘' R-localize {A})

@@ -89,11 +89,8 @@ Nuc = record
   }
 
 open import USet.Base 𝕎
-open import USet.Localized 𝕎 K _∈_ Nuc renaming
-  (𝒞' to 𝒥'
-  ; map𝒞' to map𝒥'
-  ; run𝒞' to run𝒥'
-  ; LUSetHA to ℛ) -- ℛ for "residualising model"
+open import USet.Localized 𝕎 K _∈_ Nuc
+  renaming (LUSetHA to ℛ) -- ℛ for "residualising model"
 
 Tm' : Form → USet
 Tm' a = uset (_⊢ a) wkTm

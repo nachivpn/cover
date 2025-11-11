@@ -39,7 +39,11 @@ open import Relation.Binary.Structures using (IsPreorder ; IsEquivalence)
 open import Level using (0ℓ ; suc) ; private 1ℓ = suc 0ℓ
 
 open import USet.Base 𝕎
-open import USet.Cover 𝕎 N _∈_ MNF public
+open import USet.Cover 𝕎 N _∈_ MNF renaming
+  ( 𝒞' to 𝒥'
+  ; map𝒞' to map𝒥'
+  ; run𝒞' to run𝒥'
+  ) public 
 
 private
   variable
@@ -62,11 +66,11 @@ record LUSet : Set₁ where
 
   -- localization property
   field
-    localize : 𝒞' 𝒳 →̇ 𝒳
+    localize : 𝒥' 𝒳 →̇ 𝒳
 
 -- Freely localize an arbitrary USet
 FromUSet : USet → LUSet
-FromUSet A = luset (𝒞' A) (join' {A})
+FromUSet A = luset (𝒥' A) (join' {A})
 
 open LUSet
 
@@ -96,7 +100,7 @@ X →̇₊ Y = X .𝒳 →̇ Y .𝒳
 _×₊_ : LUSet → LUSet → LUSet
 luset A lA ×₊ luset B lB = luset (A ×' B) localize-×'
   where
-  localize-×' : 𝒞' (A ×' B) →̇ (A ×' B)
+  localize-×' : 𝒥' (A ×' B) →̇ (A ×' B)
   localize-×' = (lA ×'-map lB) ∘' ×'-distr-forth' {A} {B}
 
 --
@@ -106,9 +110,9 @@ luset A lA ×₊ luset B lB = luset (A ×' B) localize-×'
 _→₊_ : LUSet → LUSet → LUSet
 luset A lA →₊ luset B lB = luset (A →' B) localize-→'
   where
-  localize-→' : 𝒞' (A →' B) →̇ (A →' B)
+  localize-→' : 𝒥' (A →' B) →̇ (A →' B)
   localize-→' = lam' (lB
-    ∘' (map𝒞' {(A →' B) ×' A} {B} eval'
+    ∘' (map𝒥' {(A →' B) ×' A} {B} eval'
     ∘' swapped-strength' {A →' B} {A}))
 
 --
@@ -119,7 +123,7 @@ luset A lA →₊ luset B lB = luset (A →' B) localize-→'
 ⊥₊ = FromUSet ⊥'
 
 ⊥₊-elim : {X : LUSet} → ⊥₊ →̇₊ X
-⊥₊-elim {X} = X .localize ∘' map𝒞' {⊥'} {X .𝒳} ⊥'-elim
+⊥₊-elim {X} = X .localize ∘' map𝒥' {⊥'} {X .𝒳} ⊥'-elim
 
 --
 -- Disjunction
@@ -135,7 +139,7 @@ inj₂₊ : {X Y : LUSet} → Y →̇₊ (X ⊎₊ Y)
 inj₂₊ {X} {Y} = return' {Y .𝒳} {X .𝒳 ⊎' Y .𝒳} inj₂'
 
 [_,_]₊ : {X Y Z : LUSet} →  X →̇₊ Z → Y →̇₊ Z → (X ⊎₊ Y) →̇₊ Z
-[_,_]₊ {X} {Y} {Z} f g = Z .localize ∘' map𝒞' {X .𝒳 ⊎' Y .𝒳} {Z .𝒳} [ f , g ]'
+[_,_]₊ {X} {Y} {Z} f g = Z .localize ∘' map𝒥' {X .𝒳 ⊎' Y .𝒳} {Z .𝒳} [ f , g ]'
 
 --
 -- Distributivity (of conjunction over disjunction)
@@ -143,17 +147,17 @@ inj₂₊ {X} {Y} = return' {Y .𝒳} {X .𝒳 ⊎' Y .𝒳} inj₂'
 
 ×₊-distr-⊎₊-forth : {X Y Z : LUSet} → (X ×₊ (Y ⊎₊ Z)) →̇₊ ((X ×₊ Y) ⊎₊ (X ×₊ Z))
 ×₊-distr-⊎₊-forth {luset A lA} {luset B lB} {luset C lC} =
-  map𝒞' {A ×' (B ⊎' C)} {(A ×' B) ⊎' (A ×' C)}  ×'-distr-⊎'-forth
+  map𝒥' {A ×' (B ⊎' C)} {(A ×' B) ⊎' (A ×' C)}  ×'-distr-⊎'-forth
   ∘' strength' {A} {B ⊎' C}
 
 ×₊-distr-⊎₊-back : {X Y Z : LUSet} → ((X ×₊ Y) ⊎₊ (X ×₊ Z)) →̇₊ (X ×₊ (Y ⊎₊ Z))
 ×₊-distr-⊎₊-back X@{luset A lA} Y@{luset B lB} Z@{luset C lC} =
   (X ×₊ (Y ⊎₊ Z)) .localize
-  ∘' (map𝒞' {(A ×' B) ⊎' (A ×' C)} {A ×' 𝒞' (B ⊎' C)}
+  ∘' (map𝒥' {(A ×' B) ⊎' (A ×' C)} {A ×' 𝒥' (B ⊎' C)}
             ((id' ×'-map return' id')
             ∘' ×'-distr-⊎'-back))
 
--- Note: observe the "localize after map𝒞" pattern
+-- Note: observe the "localize after map𝒥" pattern
 -- in ⊥₊-elim, [_,_]₊ and ×₊-distr-⊎₊-back.
 
 --

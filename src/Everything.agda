@@ -18,4 +18,3 @@ open import Instances.Err
 
 -- Dual-context modal lambda calculi
 open import Instances.DK
-
