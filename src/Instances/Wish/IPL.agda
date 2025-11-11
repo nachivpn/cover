@@ -121,10 +121,26 @@ module Semantics (ℋ : HAlg) where
              ; _∧_ to _∧'_
              ; _∨_ to _∨'_
              ; _⇨_ to _⇒'_
+             ; maximum to unit'
+             ; minimum to init'
+             ; refl to ≤-refl
+             ; trans to ≤-trans
+             ; ∧-greatest to ⟨_,_⟩'
+             ; x∧y≤x to proj₁'
+             ; x∧y≤y to proj₂'
+             ; transpose-⇨ to curry'
+             ; transpose-∧ to uncurry'
+             ; x≤x∨y to inj₁'
+             ; y≤x∨y to inj₂'
+             ; ∨-least to [_,_]'
              ) public
+  open import Relation.Binary.Lattice.Properties.HeytingAlgebra ℋ
+    renaming (∧-distribˡ-∨-≤ to ∧'-distr-∨'-forth)
 
-  module Eval (V𝕓 : H) where
+  -- Interpretation for a model
+  module ⟦-⟧ (V𝕓 : H) where
 
+    -- Interpretation of a formula
     ⟦_⟧ : Form → H
     ⟦ 𝕡 ⟧     = V𝕓
     ⟦ ⊤ ⟧     = ⊤'
@@ -133,155 +149,197 @@ module Semantics (ℋ : HAlg) where
     ⟦ a ∧ b ⟧ = ⟦ a ⟧ ∧' ⟦ b ⟧
     ⟦ a ∨ b ⟧ = ⟦ a ⟧ ∨' ⟦ b ⟧
 
+    -- Interpretation of a context
     ⟦_⟧c : Ctx → H
     ⟦ [] ⟧c     = ⊤'
     ⟦ Γ `, a ⟧c = ⟦ Γ ⟧c ∧' ⟦ a ⟧
 
-    _⊨_ : Ctx → Form → Set
-    Γ ⊨ a = ⟦ Γ ⟧c ≤ ⟦ a ⟧
-    
-    -- deductive soundness
-    -- TODO
-    -- sound : Γ ⊢ a → Γ ⊨ a
-    -- sound t = {!!}
+    -- Interpretation is sound for hypothesis
+    ⟦-⟧-sound-hyp : Var Γ a → ⟦ Γ ⟧c ≤ ⟦ a ⟧
+    ⟦-⟧-sound-hyp {Γ `, a} {.a} zero
+      = proj₂' ⟦ Γ ⟧c ⟦ a ⟧
+    ⟦-⟧-sound-hyp {Γ `, b} {a} (succ x)
+      = ≤-trans (proj₁' ⟦ Γ ⟧c ⟦ b ⟧) (⟦-⟧-sound-hyp x)
 
-data K : Ctx → Set where
-  leaf    : (Γ : Ctx) → K Γ
-  dead    : Γ ⊢Ne ⊥ → K Γ
-  branch  : Γ ⊢Ne (a ∨ b) → K (Γ `, a) → K (Γ `, b) → K Γ
+    -- Interpretation is sound for derivations
+    ⟦-⟧-sound : Γ ⊢ a → ⟦ Γ ⟧c ≤ ⟦ a ⟧
+    ⟦-⟧-sound {_} {a} (hyp x)
+      = ⟦-⟧-sound-hyp x
+    ⟦-⟧-sound {Γ} {_} ⊤-I
+      = unit' ⟦ Γ ⟧c
+    ⟦-⟧-sound {_} {a} (⊥-E t)
+      = ≤-trans (⟦-⟧-sound t) (init' ⟦ a ⟧)
+    ⟦-⟧-sound (⇒-I t)
+      = curry' (⟦-⟧-sound t)
+    ⟦-⟧-sound (⇒-E t u)
+      = ≤-trans ⟨ ≤-refl , ⟦-⟧-sound u ⟩' (uncurry' (⟦-⟧-sound t))
+    ⟦-⟧-sound (∧-I t u)
+      = ⟨ ⟦-⟧-sound t , ⟦-⟧-sound u ⟩'
+    ⟦-⟧-sound {Γ} {a} (∧-E1 {.Γ} {.a} {b} t)
+      = ≤-trans (⟦-⟧-sound t) (proj₁' ⟦ a ⟧ ⟦ b ⟧)
+    ⟦-⟧-sound {Γ} {b} (∧-E2 {.Γ} {a} {.b} t)
+      = ≤-trans (⟦-⟧-sound t) (proj₂' ⟦ a ⟧ ⟦ b ⟧)
+    ⟦-⟧-sound {Γ} {_} (∨-I1 {.Γ} {a} {b} t)
+      = ≤-trans (⟦-⟧-sound t) (inj₁' ⟦ a ⟧ ⟦ b ⟧)
+    ⟦-⟧-sound {Γ} {_} (∨-I2 {.Γ} {a} {b} t)
+      = ≤-trans (⟦-⟧-sound t) (inj₂' ⟦ b ⟧ ⟦ a ⟧)
+    ⟦-⟧-sound {Γ} {c} (∨-E {.Γ} {a} {b} {.c} t u1 u2)
+      = ≤-trans ⟨ ≤-refl , ⟦-⟧-sound t ⟩'
+          (≤-trans (∧'-distr-∨'-forth ⟦ Γ ⟧c ⟦ a ⟧ ⟦ b ⟧) [ ⟦-⟧-sound u1 , ⟦-⟧-sound u2 ]')
 
-data _∈_ (Δ : Ctx) : K Γ → Set where
-  here : Δ ∈ leaf Δ
-  left : {n : Γ ⊢Ne (a ∨ b)} {k : K (Γ `, a)} {k' : K (Γ `, b)}
-    → Δ ∈ k → Δ ∈ branch n k k'
-  right : {n : Γ ⊢Ne (a ∨ b)} {k : K (Γ `, a)} {k' : K (Γ `, b)}
-    → Δ ∈ k' → Δ ∈ branch n k k'
+-- Entailment in a model
+_⨾_⊨_ : HAlg → Ctx → Form → Set₁
+ℋ ⨾ Γ ⊨ a = let open Semantics ℋ in
+  ∀ V𝕓 → let open ⟦-⟧ V𝕓 in ⟦ Γ ⟧c ≤ ⟦ a ⟧
 
-open import Frame.NFrame 𝕎 K _∈_
+-- Entailment
+_⊨_ : Ctx → Form → Set₂
+Γ ⊨ a = ∀ ℋ → ℋ ⨾ Γ ⊨ a
 
-wkK : Γ ⊆ Γ' → K Γ → K Γ'
-wkK i (leaf Δ)        = leaf _
-wkK i (dead n)        = dead (wkNe i n)
-wkK i (branch n k k') = branch (wkNe i n) (wkK (keep i) k) (wkK (keep i) k')
+-- deductive soundness
+soundness : Γ ⊢ a → Γ ⊨ a
+soundness t ℋ V𝕓 = let open Semantics ℋ ; open ⟦-⟧ V𝕓 in ⟦-⟧-sound t
 
-wkK-refines : (i : Γ ⊆ Γ') (k : K Γ) → k ≼ wkK i k
-wkK-refines i (leaf _) here
-  = _ , here , i
-wkK-refines i (dead x) ()
-wkK-refines i (branch x k1 k2) (left p)
-  = let (Δ , p' , i') = wkK-refines (keep i) k1 p in
-     (Δ , left p' , i')
-wkK-refines i (branch x k1 k2) (right p)
-  = let (Δ , p' , i') = wkK-refines (keep i) k2 p in
-     (Δ , right p' , i')
+module Completeness where
 
-NF : Refinement
-NF = record { wkN = wkK ; wkN-refines = wkK-refines }
+  data K : Ctx → Set where
+    leaf    : (Γ : Ctx) → K Γ
+    dead    : Γ ⊢Ne ⊥ → K Γ
+    branch  : Γ ⊢Ne (a ∨ b) → K (Γ `, a) → K (Γ `, b) → K Γ
 
-INF : Identity
-INF = record
-  { idN[_]         = leaf
-  ; idN-bwd-member = λ { here → ≡-refl }
-  }
+  data _∈_ (Δ : Ctx) : K Γ → Set where
+    here : Δ ∈ leaf Δ
+    left : {n : Γ ⊢Ne (a ∨ b)} {k : K (Γ `, a)} {k' : K (Γ `, b)}
+      → Δ ∈ k → Δ ∈ branch n k k'
+    right : {n : Γ ⊢Ne (a ∨ b)} {k : K (Γ `, a)} {k' : K (Γ `, b)}
+      → Δ ∈ k' → Δ ∈ branch n k k'
 
-WINF = Identity.weakIdentity INF
+  open import Frame.NFrame 𝕎 K _∈_
 
-reachable : (k : K Γ) → ForAllW k (Γ ⊆_)
-reachable (leaf _)         here
-  = ⊆-refl
-reachable (dead x)         ()
-reachable (branch x k1 k2) (left p)
-  = freshWk ∙ reachable k1 p
-reachable (branch x k1 k2) (right p)
-  = freshWk ∙ reachable k2 p
+  wkK : Γ ⊆ Γ' → K Γ → K Γ'
+  wkK i (leaf Δ)        = leaf _
+  wkK i (dead n)        = dead (wkNe i n)
+  wkK i (branch n k k') = branch (wkNe i n) (wkK (keep i) k) (wkK (keep i) k')
 
-RNF : Reachability
-RNF = record { reachable = reachable }
+  wkK-refines : (i : Γ ⊆ Γ') (k : K Γ) → k ≼ wkK i k
+  wkK-refines i (leaf _) here
+    = _ , here , i
+  wkK-refines i (dead x) ()
+  wkK-refines i (branch x k1 k2) (left p)
+    = let (Δ , p' , i') = wkK-refines (keep i) k1 p in
+       (Δ , left p' , i')
+  wkK-refines i (branch x k1 k2) (right p)
+    = let (Δ , p' , i') = wkK-refines (keep i) k2 p in
+       (Δ , right p' , i')
 
-transK : (k : K Γ) → ForAllW k K → K Γ
-transK (leaf _)        f = f here
-transK (dead x)        f = dead x
-transK (branch x k k') f = branch x (transK k (f ∘ left)) (transK k' (f ∘ right))
+  NF : Refinement
+  NF = record { wkN = wkK ; wkN-refines = wkK-refines }
 
-transK-bwd-member : (k : K Γ) (h : ForAllW k K)
-  → ForAllW (transK k h) (λ Δ → Exists∈ k (λ Γ∈k → Δ ∈ h Γ∈k))
-transK-bwd-member (leaf Γ)        h p
-  = Γ , here , p
-transK-bwd-member (dead x)        h ()
-transK-bwd-member (branch x k k') h (left p)  =
-  let (vl , p' , pl) = transK-bwd-member k (h ∘ left) p
-  in vl , left p' , pl
-transK-bwd-member (branch x k k') h (right p) =
-  let (vl , p' , pr) = transK-bwd-member k' (h ∘ right) p
-  in vl , right p' , pr
-
-TNF : Transitivity
-TNF = record
-  { transN            = transK
-  ; transN-bwd-member = transK-bwd-member
-  }
-
-WTNF = Transitivity.weakTransitivity TNF
-
-open import USet.Base 𝕎
-open import USet.Cover 𝕎 K _∈_ NF renaming (𝒞' to 𝒥')
-open import USet.Localized 𝕎 K _∈_ NF RNF INF TNF
-
-Nf' : Form → USet
-Nf' a = uset (_⊢Nf a) wkNf
-
-Ne' : Form → USet
-Ne' a = uset (_⊢Ne a) wkNe
-
-emb' : Ne' 𝕡 →̇ Nf' 𝕡
-emb' .apply = emb
-
-∨-I1' : Nf' a →̇ Nf' (a ∨ b)
-∨-I1' .apply = ∨-I1
-
-∨-I2' : Nf' b →̇ Nf' (a ∨ b)
-∨-I2' .apply = ∨-I2
-
-Nf₊ : Form → LUSet
-Nf₊ a = luset (Nf' a) (run𝒞' {Nf' a} localizeNf)
-  where
-  localizeNf : (k : K Γ) → ForAllW k (_⊢Nf a) → Γ ⊢Nf a
-  localizeNf (leaf _)         h = h here
-  localizeNf (dead x)         h = ⊥-E x
-  localizeNf (branch x k1 k2) h = ∨-E x (localizeNf k1 (h ∘ left)) (localizeNf k2 (h ∘ right))
-
-open Semantics.Eval LUSetHA (Nf₊ 𝕡)
-open LUSet
-
---reify   : ∀ a → ⟦ a ⟧ →̇₊ (Nf₊ a)
--- or equivalently:
-reify   : ∀ a → ⟦ a ⟧ .𝒳 →̇ Nf' a
-reflect : ∀ a → Ne' a →̇ ⟦ a ⟧ .𝒳
-
-reify 𝕡       = id'
-reify ⊤       = fun (λ _ → ⊤-I)
-reify (a ⇒ b) = fun λ x → ⇒-I (reify b .apply (x freshWk (reflect a .apply (hyp zero))))
-reify (a ∧ b) = fun λ x → ∧-I (reify a .apply (proj₁ x)) (reify b .apply (proj₂ x))
-reify ⊥       = Nf₊ ⊥ .localize ∘' map𝒞' (⊥'-elim {Nf' ⊥})
-reify (a ∨ b) = Nf₊ (a ∨ b) .localize ∘' map𝒞' [ ∨-I1' ∘' reify a  , ∨-I2' ∘' reify b ]'
-
-reflect 𝕡       = emb'
-reflect ⊤       = unit'
-reflect (a ⇒ b) = fun λ n i x → reflect b .apply (⇒-E (wkNe i n) (reify a .apply x))
-reflect (a ∧ b) = fun λ n → reflect a .apply (∧-E1 n) , reflect b .apply (∧-E2 n)
-reflect ⊥       = fun λ n → dead n , λ{()}
-reflect (a ∨ b) = fun λ n → branch n (leaf (_ `, a)) (leaf (_ `, b)) ,
-  λ { (left here)  → inj₁ (reflect a .apply (hyp zero))
-    ; (right here) → inj₂ (reflect b .apply (hyp zero))
+  INF : Identity
+  INF = record
+    { idN[_]         = leaf
+    ; idN-bwd-member = λ { here → ≡-refl }
     }
 
-idEnv : ∀ Γ → ⟦ Γ ⟧c .𝒳 ₀ Γ
-idEnv []       = _
-idEnv (Γ `, a) = wk (⟦ Γ ⟧c .𝒳) freshWk (idEnv Γ) , reflect a .apply (hyp zero)
+  WINF = Identity.weakIdentity INF
 
-quot : (⟦ Γ ⟧c →̇₊ ⟦ a ⟧) → Γ ⊢Nf a
-quot {Γ} {a} f = reify a .apply (f .apply (idEnv Γ))
+  reachable : (k : K Γ) → ForAllW k (Γ ⊆_)
+  reachable (leaf _)         here
+    = ⊆-refl
+  reachable (dead x)         ()
+  reachable (branch x k1 k2) (left p)
+    = freshWk ∙ reachable k1 p
+  reachable (branch x k1 k2) (right p)
+    = freshWk ∙ reachable k2 p
 
--- deductive completeness
-complete : Γ ⊨ a → Γ ⊢ a
-complete = embNf ∘ quot
+  RNF : Reachability
+  RNF = record { reachable = reachable }
+
+  transK : (k : K Γ) → ForAllW k K → K Γ
+  transK (leaf _)        f = f here
+  transK (dead x)        f = dead x
+  transK (branch x k k') f = branch x (transK k (f ∘ left)) (transK k' (f ∘ right))
+
+  transK-bwd-member : (k : K Γ) (h : ForAllW k K)
+    → ForAllW (transK k h) (λ Δ → Exists∈ k (λ Γ∈k → Δ ∈ h Γ∈k))
+  transK-bwd-member (leaf Γ)        h p
+    = Γ , here , p
+  transK-bwd-member (dead x)        h ()
+  transK-bwd-member (branch x k k') h (left p)  =
+    let (vl , p' , pl) = transK-bwd-member k (h ∘ left) p
+    in vl , left p' , pl
+  transK-bwd-member (branch x k k') h (right p) =
+    let (vl , p' , pr) = transK-bwd-member k' (h ∘ right) p
+    in vl , right p' , pr
+
+  TNF : Transitivity
+  TNF = record
+    { transN            = transK
+    ; transN-bwd-member = transK-bwd-member
+    }
+
+  WTNF = Transitivity.weakTransitivity TNF
+
+  open import USet.Base 𝕎
+  open import USet.Cover 𝕎 K _∈_ NF renaming (𝒞' to 𝒥')
+  open import USet.Localized 𝕎 K _∈_ NF RNF INF TNF
+    renaming (LUSetHA to ℛ) -- ℛ for "residualising model"
+
+  Nf' : Form → USet
+  Nf' a = uset (_⊢Nf a) wkNf
+
+  Ne' : Form → USet
+  Ne' a = uset (_⊢Ne a) wkNe
+
+  emb' : Ne' 𝕡 →̇ Nf' 𝕡
+  emb' .apply = emb
+
+  ∨-I1' : Nf' a →̇ Nf' (a ∨ b)
+  ∨-I1' .apply = ∨-I1
+
+  ∨-I2' : Nf' b →̇ Nf' (a ∨ b)
+  ∨-I2' .apply = ∨-I2
+
+  Nf₊ : Form → LUSet
+  Nf₊ a = luset (Nf' a) (run𝒞' {Nf' a} localizeNf)
+    where
+    localizeNf : (k : K Γ) → ForAllW k (_⊢Nf a) → Γ ⊢Nf a
+    localizeNf (leaf _)         h = h here
+    localizeNf (dead x)         h = ⊥-E x
+    localizeNf (branch x k1 k2) h = ∨-E x (localizeNf k1 (h ∘ left)) (localizeNf k2 (h ∘ right))
+
+  open Semantics.⟦-⟧ ℛ (Nf₊ 𝕡) -- imports ⟦-⟧
+  open LUSet -- imports localize and 𝒳
+
+  --reify   : ∀ a → ⟦ a ⟧ →̇₊ (Nf₊ a)
+  -- or equivalently:
+  reify   : ∀ a → ⟦ a ⟧ .𝒳 →̇ Nf' a
+  reflect : ∀ a → Ne' a →̇ ⟦ a ⟧ .𝒳
+
+  reify 𝕡       = id'
+  reify ⊤       = fun (λ _ → ⊤-I)
+  reify (a ⇒ b) = fun λ x → ⇒-I (reify b .apply (x freshWk (reflect a .apply (hyp zero))))
+  reify (a ∧ b) = fun λ x → ∧-I (reify a .apply (proj₁ x)) (reify b .apply (proj₂ x))
+  reify ⊥       = Nf₊ ⊥ .localize ∘' map𝒞' (⊥'-elim {Nf' ⊥})
+  reify (a ∨ b) = Nf₊ (a ∨ b) .localize ∘' map𝒞' [ ∨-I1' ∘' reify a  , ∨-I2' ∘' reify b ]'
+
+  reflect 𝕡       = emb'
+  reflect ⊤       = unit'
+  reflect (a ⇒ b) = fun λ n i x → reflect b .apply (⇒-E (wkNe i n) (reify a .apply x))
+  reflect (a ∧ b) = fun λ n → reflect a .apply (∧-E1 n) , reflect b .apply (∧-E2 n)
+  reflect ⊥       = fun λ n → dead n , λ{()}
+  reflect (a ∨ b) = fun λ n → branch n (leaf (_ `, a)) (leaf (_ `, b)) ,
+    λ { (left here)  → inj₁ (reflect a .apply (hyp zero))
+      ; (right here) → inj₂ (reflect b .apply (hyp zero))
+      }
+
+  idEnv : ∀ Γ → ⟦ Γ ⟧c .𝒳 ₀ Γ
+  idEnv []       = _
+  idEnv (Γ `, a) = wk (⟦ Γ ⟧c .𝒳) freshWk (idEnv Γ) , reflect a .apply (hyp zero)
+
+  quot : (⟦ Γ ⟧c →̇₊ ⟦ a ⟧) → Γ ⊢Nf a
+  quot {Γ} {a} f = reify a .apply (f .apply (idEnv Γ))
+
+  -- deductive completeness
+  completeness : Γ ⊨ a → Γ ⊢ a
+  completeness f = embNf (quot (f ℛ (Nf₊ 𝕡)))
