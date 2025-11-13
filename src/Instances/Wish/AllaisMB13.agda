@@ -1,6 +1,6 @@
 {-# OPTIONS --safe #-}
 
--- "New Equations for Neutral Terms"
+-- Extension of "New Equations for Neutral Terms"
 -- (https://arxiv.org/abs/1304.0809)
 module Instances.Wish.AllaisMB13 where
 
@@ -14,11 +14,12 @@ open import Relation.Binary.PropositionalEquality using (_≡_)
 open import PUtil
 
 open import Function
-open import Data.Sum
+open import Data.Sum renaming ([_,_] to ⊎-match)
 
 data Ty : Set where
-  𝕓 : Ty
-  𝕃 : Ty → Ty
+  𝕓   : Ty
+  _⇒_ : Ty → Ty → Ty
+  𝕃   : Ty → Ty
 
 private
   variable
@@ -26,14 +27,20 @@ private
 
 open import Context Ty
 
-≡-cong₃ :
-  {A A' A'' : Set} {B : Set}
-  (f : A → A' → A'' → B)
-  {x y : A} {x' y' : A'} {x'' y'' : A''}
-  (p : x ≡ y) (q : x' ≡ y') (r : x'' ≡ y'')
-  → ---------------------
-  f x x' x'' ≡ f y y' y''
-≡-cong₃ _ ≡-refl ≡-refl ≡-refl = ≡-refl
+--
+-- Syntax
+--
+
+data Tm : Ctx → Ty → Set where
+  var     : Var Γ a → Tm Γ a
+  lam     : Tm (Γ `, a) b → Tm Γ (a ⇒ b)
+  app     : Tm Γ (a ⇒ b) → Tm Γ a → Tm Γ b
+  nothing : Tm Γ (𝕃 a)
+  nil     : Tm Γ (𝕃 a)
+  cons    : Tm Γ a → Tm Γ (𝕃 a) → Tm Γ (𝕃 a)
+  append  : Tm Γ (𝕃 a) → Tm Γ (𝕃 a) → Tm Γ (𝕃 a)
+  concat  : Tm Γ (𝕃 (𝕃 a)) → Tm Γ (𝕃 b)
+  letmap  : Tm Γ (𝕃 a) → Tm (Γ `, a) b → Tm Γ (𝕃 b)
 
 mutual
   data Ne : Ctx → Ty → Set where
@@ -41,10 +48,10 @@ mutual
     fold : Nf ((Γ `, a) `, b) b → Nf Γ b → Ne Γ (𝕃 a) → Ne Γ b
 
   data Nf : Ctx → Ty → Set where
-    emb   : Ne Γ 𝕓 → Nf Γ 𝕓
-    nil   : Nf Γ (𝕃 b)
-    cons  : Nf Γ b → Nf Γ (𝕃 b) → Nf Γ (𝕃 b)
-    mapp  : Nf (Γ `, a) b → Ne Γ (𝕃 a) → Nf Γ (𝕃 b) → Nf Γ (𝕃 b)
+    emb    : Ne Γ 𝕓 → Nf Γ 𝕓
+    nil    : Nf Γ (𝕃 b)
+    cons   : Nf Γ b → Nf Γ (𝕃 b) → Nf Γ (𝕃 b)
+    cmapp  : Nf (Γ `, a) (𝕃 b) → Ne Γ (𝕃 a) → Nf Γ (𝕃 b) → Nf Γ (𝕃 b)
 
 mutual
   wkNe : Γ ⊆ Γ' → Ne Γ a → Ne Γ' a
@@ -52,175 +59,99 @@ mutual
   wkNe i (fold f b n) = fold (wkNf (keep (keep i)) f) (wkNf i b) (wkNe i n)
 
   wkNf : Γ ⊆ Γ' → Nf Γ a → Nf Γ' a
-  wkNf i (emb x)       = emb (wkNe i x)
-  wkNf i nil           = nil
-  wkNf i (cons n m)    = cons (wkNf i n) (wkNf i m)
-  wkNf i (mapp m n m') = mapp (wkNf (keep i) m) (wkNe i n) (wkNf i m')
+  wkNf i (emb x)        = emb (wkNe i x)
+  wkNf i nil            = nil
+  wkNf i (cons n m)     = cons (wkNf i n) (wkNf i m)
+  wkNf i (cmapp m n m') = cmapp (wkNf (keep i) m) (wkNe i n) (wkNf i m')
 
-mutual
-  wkNe-pres-refl : (n : Ne Γ a) → wkNe ⊆-refl n ≡ n
-  wkNe-pres-refl (var x)      = ≡-cong var (wkVar-pres-⊆-refl x)
-  wkNe-pres-refl (fold f b n) = ≡-cong₃ fold (wkNf-pres-refl f) (wkNf-pres-refl b) (wkNe-pres-refl n)
-
-  wkNf-pres-refl : (n : Nf Γ a) → wkNf ⊆-refl n ≡ n
-  wkNf-pres-refl (emb x)      = ≡-cong emb (wkNe-pres-refl x)
-  wkNf-pres-refl nil          = ≡-refl
-  wkNf-pres-refl (cons x xs)  = ≡-cong₂ cons (wkNf-pres-refl x) (wkNf-pres-refl xs)
-  wkNf-pres-refl (mapp f x n) = ≡-cong₃ mapp (wkNf-pres-refl f) (wkNe-pres-refl x) (wkNf-pres-refl n)
-
-mutual
-  wkNe-pres-trans : (i : Γ ⊆ Γ') (i' : Γ' ⊆ Γ'') (n : Ne Γ a)
-    → wkNe (⊆-trans i i') n ≡ wkNe i' (wkNe i n)
-  wkNe-pres-trans i i' (var x)      = ≡-cong var (wkVar-pres-⊆-trans i i' x)
-  wkNe-pres-trans i i' (fold f b n) = ≡-cong₃ fold
-    (wkNf-pres-trans (keep (keep i)) (keep (keep i')) f)
-    (wkNf-pres-trans i i' b)
-    (wkNe-pres-trans i i' n)
-
-  wkNf-pres-trans : (i : Γ ⊆ Γ') (i' : Γ' ⊆ Γ'') (n : Nf Γ a)
-    → wkNf (⊆-trans i i') n ≡ wkNf i' (wkNf i n)
-  wkNf-pres-trans i i' (emb x)       = ≡-cong emb (wkNe-pres-trans i i' x)
-  wkNf-pres-trans i i' nil           = ≡-refl
-  wkNf-pres-trans i i' (cons x xs)   = ≡-cong₂ cons (wkNf-pres-trans i i' x) (wkNf-pres-trans i i' xs)
-  wkNf-pres-trans i i' (mapp f xs n) = ≡-cong₃ mapp
-    (wkNf-pres-trans (keep i) (keep i') f)
-    (wkNe-pres-trans i i' xs)
-    (wkNf-pres-trans i i' n)
-
-open import Frame.CFrame 𝒲
-
--- the original residualising functor in the paper
-data 𝐋 (A : Ctx → Set) : Ctx → Set where
-  nil  : 𝐋 A Γ
-  cons : A Γ → 𝐋 A Γ → 𝐋 A Γ
-  mapp : (∀ {Γ'} → Γ ⊆ Γ' → Ne Γ' a → A Γ') → Ne Γ (𝕃 a) → 𝐋 A Γ → 𝐋 A Γ
-
--- a simplified residualising functor
-data ℒ (A : Ctx → Set) : Ctx → Set where
-  nil  : ℒ A Γ
-  cons : A Γ → ℒ A Γ → ℒ A Γ
-  mapp : (h : A (Γ `, a)) (n : Ne Γ (𝕃 a)) → ℒ A Γ → ℒ A Γ
-
--- (special case of) "internal" mapℒ
-imapℒ : {A B : Ctx → Set}
-  → (∀ {Γ'} → Γ ⊆ Γ' → A Γ' → B Γ')
-  → ℒ A Γ → ℒ B Γ
-imapℒ f nil          = nil
-imapℒ f (cons x m)   = cons (f ⊆-refl x) (imapℒ f m)
-imapℒ f (mapp h n m) = mapp (f freshWk h) n (imapℒ f m)
-
-_++_ : {A : Ctx → Set} → ℒ A Γ → ℒ A Γ → ℒ A Γ
-nil         ++ m2 = m2
-cons x m1   ++ m2 = cons x (m1 ++ m2)
-mapp h n m1 ++ m2 = mapp h n (m1 ++ m2)
+-- the concrete residualising monad (for illustration only)
+data List (A : Ctx → Set) : Ctx → Set where
+  nil   : List A Γ
+  cons  : A Γ → List A Γ → List A Γ
+  cmapp : (h : List A (Γ `, a)) (n : Ne Γ (𝕃 a)) → List A Γ → List A Γ
 
 --
--- Note: Observe 𝐋 and ℒ are not monads! They do not support
--- concat, which gives the join of the List monad.
---
--- The problematic case is mapp.
---
-
---
--- Deriving ℒ using the cover modality
+-- Deriving List using the cover modality
 --
 
 data K : Ctx → Set where
-  nil  : (Γ : Ctx) → K Γ
-  cons : K Γ → K Γ
-  mapp : (n : Ne Γ (𝕃 a)) → K Γ → K Γ
+  nil   : (Γ : Ctx) → K Γ
+  cons  : K Γ → K Γ
+  cmapp : K (Γ `, a) → (n : Ne Γ (𝕃 a)) → K Γ → K Γ
 
 data _∈_ : Ctx → {Γ : Ctx} → K Γ → Set where
-  here-cons  : {k : K Γ} → Γ ∈ cons k
-  there-cons : {k : K Γ} → Δ ∈ k → Δ ∈ cons k
-  here-mapp  : {n : Ne Γ (𝕃 a)} {k : K Γ} → (Γ `, a) ∈ mapp n k
-  there-mapp : {n : Ne Γ (𝕃 a)} {k : K Γ} → Δ ∈ k → Δ ∈ mapp n k
+  here-cons   : {k : K Γ} → Γ ∈ cons k
+  there-cons  : {k : K Γ} → Δ ∈ k → Δ ∈ cons k
+  left-cmapp  : {n : Ne Γ (𝕃 a)} {k1 : K (Γ `, a)} {k2 : K Γ} → Δ ∈ k1 → Δ ∈ cmapp k1 n k2
+  right-cmapp : {n : Ne Γ (𝕃 a)} {k1 : K (Γ `, a)} {k2 : K Γ} → Δ ∈ k2 → Δ ∈ cmapp k1 n k2
+
+open import Frame.NFrame 𝕎 K _∈_
 
 wkK : Γ ⊆ Γ' → K Γ → K Γ'
-wkK i (nil _)    = nil _
-wkK i (cons m)   = cons (wkK i m)
-wkK i (mapp n m) = mapp (wkNe i n) (wkK i m)
+wkK i (nil _)         = nil _
+wkK i (cons m)        = cons (wkK i m)
+wkK i (cmapp m1 n m2) = cmapp (wkK (keep i) m1) (wkNe i n) (wkK i m2)
 
-wkK-pres-refl : (k : K Γ) → wkK ⊆-refl k ≡ k
-wkK-pres-refl (nil _)    = ≡-refl
-wkK-pres-refl (cons k)   = ≡-cong cons (wkK-pres-refl k)
-wkK-pres-refl (mapp n k) = ≡-cong₂ mapp (wkNe-pres-refl n) (wkK-pres-refl k)
-
-wkK-pres-trans : (i : Γ ⊆ Γ') (i' : Γ' ⊆ Γ'') (k : K Γ)
-    → wkK (⊆-trans i i') k ≡ wkK i' (wkK i k)
-wkK-pres-trans i i' (nil _)
-  = ≡-refl
-wkK-pres-trans i i' (cons k)
-  = ≡-cong cons (wkK-pres-trans i i' k)
-wkK-pres-trans i i' (mapp n k)
-  = ≡-cong₂ mapp (wkNe-pres-trans i i' n) (wkK-pres-trans i i' k)
-
-𝒦 : KPsh
-𝒦 = record
-  { K              = K
-  ; wkK            = wkK
-  ; wkK-pres-refl  = wkK-pres-refl
-  ; wkK-pres-trans = wkK-pres-trans
-  }
-
-open {-CF.-}Core 𝒦 _∈_
-
-factor : (i : Γ ⊆ Γ') (k : K Γ) → k ⊆k wkK i k
-factor i (cons k)   here-cons      = _ , here-cons , i
-factor i (cons k)   (there-cons p) =
-  let (Δ , p' , i') = factor i k p
+wkK-refines : (i : Γ ⊆ Γ') (k : K Γ) → k ≼ wkK i k
+wkK-refines i (cons k)   here-cons      = _ , here-cons , i
+wkK-refines i (cons k)   (there-cons p) =
+  let (Δ , p' , i') = wkK-refines i k p
   in Δ , there-cons p' , i'
-factor i (mapp n k) here-mapp      = _ , here-mapp , keep i
-factor i (mapp n k) (there-mapp p)  =
-  let (Δ , p' , i') = factor i k p
-  in Δ , there-mapp p' , i'
+wkK-refines i (cmapp k1 n k2) (left-cmapp p)  =
+  let (Δ , p' , i') = wkK-refines (keep i) k1 p
+  in Δ , left-cmapp p' , i'
+wkK-refines i (cmapp k1 n k2) (right-cmapp p)  =
+  let (Δ , p' , i') = wkK-refines i k2 p
+  in Δ , right-cmapp p' , i'
 
-factor-pres-refl : (k : K Γ)
-    → factor ⊆-refl k ≋ ⊆k-refl[ k ]'
-factor-pres-refl (cons k)   here-cons
-  rewrite wkK-pres-refl k
-  = ≡-refl
-factor-pres-refl (cons k)   (there-cons p)
-  rewrite factor-pres-refl k p
-    | wkK-pres-refl k
-  = ≡-refl
-factor-pres-refl (mapp n k) here-mapp
-  rewrite wkNe-pres-refl n
-    | wkK-pres-refl k
-  = ≡-refl
-factor-pres-refl (mapp n k) (there-mapp p)
-  rewrite wkNe-pres-refl n
-    | factor-pres-refl k p
-    | wkK-pres-refl k
-  = ≡-refl
+MNF : Refinement
+MNF = record { wkN = wkK ; wkN-refines = wkK-refines }
 
-factor-pres-trans : (i : Γ ⊆ Γ') (i' : Γ' ⊆ Γ'') (k : K Γ)
-    → factor (⊆-trans i i') k ≋ ⊆k-trans' k (factor i k) (factor i' (wkK i k))
-factor-pres-trans i i' (cons k)   here-cons
-  rewrite wkK-pres-trans i i' k
-  = ≡-refl
-factor-pres-trans i i' (cons k)   (there-cons p)
-  rewrite factor-pres-trans i i' k p
-    | wkK-pres-trans i i' k
-  = ≡-refl
-factor-pres-trans i i' (mapp n k) here-mapp
-  rewrite wkNe-pres-trans i i' n
-    | wkK-pres-trans i i' k
-  = ≡-refl
-factor-pres-trans i i' (mapp n k) (there-mapp p)
-  rewrite factor-pres-trans i i' k p
-    | wkNe-pres-trans i i' n
-    | wkK-pres-trans i i' k
-  = ≡-refl
+reachable : (k : K Γ) → ForAllW k (Γ ⊆_)
+reachable (nil _)         ()
+reachable (cons k)        here-cons
+  = ⊆-refl
+reachable (cons k)        (there-cons p)
+  = reachable k p
+reachable (cmapp k1 x k2) (left-cmapp p)
+  = freshWk ∙ reachable k1 p
+reachable (cmapp k1 x k2) (right-cmapp p)
+  = reachable k2 p
 
-CF : CFrame
-CF = record
-  { factor            = factor
-  ; factor-pres-refl  = factor-pres-refl
-  ; factor-pres-trans = factor-pres-trans
-  }
+-- Closure under union
+_⊕_ : K Γ → K Γ → K Γ
+(nil _)         ⊕ k' = k'
+(cons k)        ⊕ k' = cons (k ⊕ k')
+(cmapp k1 n k2) ⊕ k' = cmapp k1 n (k2 ⊕ k')
 
-open import USet.Base 𝒲 𝒦 _∈_ CF -- USet, Cover'. etc.
+⊕-bwd-reachable : (k1 k2 : K Γ)
+  → ForAllW (k1 ⊕ k2) λ v → v ∈ k1 ⊎ v ∈ k2
+⊕-bwd-reachable (nil _)         k' p
+  = inj₂ p
+⊕-bwd-reachable (cons k)        k' here-cons
+  = inj₁ here-cons
+⊕-bwd-reachable (cons k)        k' (there-cons p)
+  = ⊎-match (inj₁ ∘ there-cons) inj₂ (⊕-bwd-reachable k k' p)
+⊕-bwd-reachable (cmapp k1 n k2) k' (left-cmapp p)
+  = inj₁ (left-cmapp p)
+⊕-bwd-reachable (cmapp k1 n k2) k' (right-cmapp p)
+  = ⊎-match (inj₁ ∘ right-cmapp) inj₂ (⊕-bwd-reachable k2 k' p)
+
+CNF : ClosedUnderUni
+CNF = record { _⊕_ = _⊕_ ; ⊕-bwd-reachable = ⊕-bwd-reachable }
+
+transK : (k : K Γ) → ForAllW k K → K Γ
+transK (nil _)        f = nil _
+transK (cons k)       f = (f here-cons) ⊕ (transK k (f ∘ there-cons))
+transK (cmapp k x k') f = cmapp (transK k (f ∘ left-cmapp)) x (transK k' (f ∘ right-cmapp))
+
+-- TODO: transK-bwd-reachable
+
+ENF : Empty
+ENF = record { emptyN[_] = nil ; emptyN-bwd-absurd = λ { () } }
+
+open import USet.Base 𝕎
+open import USet.Cover 𝕎 K _∈_ MNF renaming (𝒞' to List')
 
 Nf' : Ty → USet
 Nf' a = uset (λ Γ → Nf Γ a) wkNf
@@ -231,77 +162,73 @@ Ne' a = uset (λ Γ → Ne Γ a) wkNe
 emb' : Ne' 𝕓 →̇ Nf' 𝕓
 emb' .apply = emb
 
-ℒ' : USet → USet
-ℒ' A = uset (ℒ (A ₀_)) wkℒ
-  where
-  wkℒ : Γ ⊆ Γ' → ℒ (A ₀_) Γ → ℒ (A ₀_) Γ'
-  wkℒ i nil          = nil
-  wkℒ i (cons x m)   = cons (wk A i x) (wkℒ i m)
-  wkℒ i (mapp h n m) = mapp (wk A (keep i) h) (wkNe i n) (wkℒ i m)
+-- Bijection between concrete/direct and derived data types
+module Bij where
 
--- Equivalence between ℒ' and Cover'
-module Equiv where
+  -- 
+  CList' : USet → USet
+  CList' A = uset (List (A ₀_)) wkList
+    where
+    wkList : Γ ⊆ Γ' → List (A ₀_) Γ → List (A ₀_) Γ'
+    wkList i nil           = nil
+    wkList i (cons x m)    = cons (wk A i x) (wkList i m)
+    wkList i (cmapp h n m) = cmapp (wkList (keep i) h) (wkNe i n) (wkList i m)
 
-  to : {A : USet} → ℒ' A →̇ Cover' A
+
+  to : {A : USet} → CList' A →̇ List' A
   to {A} .apply nil          = nil _ , λ ()
   to {A} .apply (cons x m)   = let (k , f) = to {A} .apply m in
     (cons k) , λ
       { here-cons      → x
       ; (there-cons p) → f p
       }
-  to {A} .apply (mapp h n m) = let (k , f) = to {A} .apply m in
-    (mapp n k) , λ
-      { here-mapp      → h
-      ; (there-mapp p) → f p
-      }
+  to {A} .apply (cmapp h n m) =
+    let (k1 , f1) = to {A} .apply h
+        (k2 , f2) = to {A} .apply m
+    in (cmapp k1 n k2) , λ
+       { (left-cmapp p) → f1 p
+       ; (right-cmapp p) → f2 p
+       }
 
-  fromAux : {A : USet} {Γ : Ctx} → (k : K Γ) (f : ForAllW k (A ₀_)) → ℒ (A ₀_) Γ
-  fromAux {A} (nil _)    f = nil
-  fromAux {A} (cons k)   f = cons (f here-cons) (fromAux {A} k (f ∘ there-cons))
-  fromAux {A} (mapp n k) f = mapp (f here-mapp) n (fromAux {A} k (f ∘ there-mapp))
+  fromAux : {A : USet} {Γ : Ctx} → (k : K Γ) (f : ForAllW k (A ₀_)) → List (A ₀_) Γ
+  fromAux {A} (nil _)         f = nil
+  fromAux {A} (cons k)        f = cons (f here-cons) (fromAux {A} k (f ∘ there-cons))
+  fromAux {A} (cmapp k1 n k2) f = cmapp (fromAux {A} k1 (f ∘ left-cmapp)) n (fromAux {A} k2 (f ∘ right-cmapp))
 
-  from : {A : USet} → Cover' A →̇ ℒ' A
-  from {A} = runCover {A} (fromAux {A})
+  from : {A : USet} → List' A →̇ CList' A
+  from {A} = run𝒞' {A} (fromAux {A})
 
--- A direct implementation (without Cover')
-module Direct where
+⟦_⟧ : Ty → USet
+⟦ 𝕓     ⟧ = Nf' 𝕓
+⟦ a ⇒ b ⟧ = ⟦ a ⟧ →' ⟦ b ⟧
+⟦ 𝕃 a   ⟧ = List' (⟦ a ⟧)
 
-  ⟦_⟧ : Ty → USet
-  ⟦ 𝕓 ⟧    = Ne' 𝕓
-  ⟦ 𝕃 a ⟧  = ℒ' ⟦ a ⟧
+⟦_⟧c : Ctx → USet
+⟦ [] ⟧c     = ⊤'
+⟦ Γ `, a ⟧c = ⟦ Γ ⟧c ×' ⟦ a ⟧
 
-  mapℒ : {A B : USet} → (A →̇ B) → ℒ' A →̇ ℒ' B
-  mapℒ f .apply nil          = nil
-  mapℒ f .apply (cons x m)   = cons (f .apply x) (mapℒ f .apply m)
-  mapℒ f .apply (mapp h n m) = mapp (f .apply h) n (mapℒ f .apply m)
+{-
+--
+-- Evaluation
+--
+nothing' : {G A : USet} → G →̇ List' A
+nothing' {G} {A} = Nothing.nothing' ENF {A = A}
 
-  collect : ℒ' (Nf' a) →̇ Nf' (𝕃 a)
-  collect .apply nil          = nil
-  collect .apply (cons x m)   = cons x (collect .apply m)
-  collect .apply (mapp h n m) = mapp h n (collect .apply m)
+just' : {G A : USet} → G →̇ A → G →̇ List' A
+just' = Return.return' WINF
 
-  register : Ne' (𝕃 a) →̇ ℒ' (Ne' a)
-  register .apply n = mapp (var zero) n nil
+letin' : {G A B : USet} → (G →̇ List' A) → ((G ×' A) →̇ List' B) → (G →̇ List' B)
+letin' {G} {A} {B} = StrongJoin.letin' RNF WTNF {G} {A} {B}
 
-  reify : (a : Ty) → ⟦ a ⟧ →̇ Nf' a
-  reify 𝕓     = emb'
-  reify (𝕃 a) = collect ∘' mapℒ (reify a)
+evalVar : Var Γ a →  ⟦ Γ ⟧c →̇ ⟦ a ⟧
+evalVar zero     = proj₂'
+evalVar (succ x) = evalVar x ∘'  proj₁'
 
-  reflect : (a : Ty) → Ne' a →̇ ⟦ a ⟧
-  reflect 𝕓     = id'
-  reflect (𝕃 a) = mapℒ (reflect a) ∘' register
-
-  -- c.f. implementation of Mfold as in Figure 7
-  foldℒ : (A : USet) (b : Ty)
-    → ({Γ' : Ctx} → Γ ⊆ Γ' → A ₀ Γ' → ⟦ b ⟧ ₀ Γ' → ⟦ b ⟧ ₀ Γ')
-    → ⟦ b ⟧ ₀ Γ → ℒ (A ₀_) Γ → ⟦ b ⟧ ₀ Γ
-  foldℒ A b C N nil            = N
-  foldℒ A b C N (cons HD TL)   = C ⊆-refl HD (foldℒ A b C N TL)
-  foldℒ A b C N (mapp F xs YS) = reflect b .apply (fold C' N' xs)
-    where
-    C' = reify b .apply (C (drop (drop ⊆-refl)) (wk A freshWk F) (reflect b .apply (var zero)))
-    N' = reify b .apply (foldℒ A b C N YS)
-
-  --
-  -- Question: foldℒ is rather hacky, could a "foldMap" be a better behaved option?
-  --
+eval : Tm Γ a → ⟦ Γ ⟧c →̇ ⟦ a ⟧
+eval (var x)             = evalVar x
+eval (lam t)             = lam' (eval t)
+eval (app t u)           = app' (eval t) (eval u)
+eval (nothing {a = a})   = nothing' {A = ⟦ a ⟧}
+eval (just t)            = just' (eval t)
+eval (letin {b = b} t u) = letin' {B = ⟦ b ⟧} (eval t) (eval u)
+-}
