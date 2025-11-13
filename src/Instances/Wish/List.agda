@@ -2,7 +2,7 @@
 
 -- Extension of "New Equations for Neutral Terms"
 -- (https://arxiv.org/abs/1304.0809)
-module Instances.Wish.AllaisMB13 where
+module Instances.Wish.List where
 
 open import Data.Product
   using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂)
@@ -165,7 +165,7 @@ emb' .apply = emb
 -- Bijection between concrete/direct and derived data types
 module Bij where
 
-  -- 
+  --
   CList' : USet → USet
   CList' A = uset (List (A ₀_)) wkList
     where
@@ -206,29 +206,3 @@ module Bij where
 ⟦_⟧c : Ctx → USet
 ⟦ [] ⟧c     = ⊤'
 ⟦ Γ `, a ⟧c = ⟦ Γ ⟧c ×' ⟦ a ⟧
-
-{-
---
--- Evaluation
---
-nothing' : {G A : USet} → G →̇ List' A
-nothing' {G} {A} = Nothing.nothing' ENF {A = A}
-
-just' : {G A : USet} → G →̇ A → G →̇ List' A
-just' = Return.return' WINF
-
-letin' : {G A B : USet} → (G →̇ List' A) → ((G ×' A) →̇ List' B) → (G →̇ List' B)
-letin' {G} {A} {B} = StrongJoin.letin' RNF WTNF {G} {A} {B}
-
-evalVar : Var Γ a →  ⟦ Γ ⟧c →̇ ⟦ a ⟧
-evalVar zero     = proj₂'
-evalVar (succ x) = evalVar x ∘'  proj₁'
-
-eval : Tm Γ a → ⟦ Γ ⟧c →̇ ⟦ a ⟧
-eval (var x)             = evalVar x
-eval (lam t)             = lam' (eval t)
-eval (app t u)           = app' (eval t) (eval u)
-eval (nothing {a = a})   = nothing' {A = ⟦ a ⟧}
-eval (just t)            = just' (eval t)
-eval (letin {b = b} t u) = letin' {B = ⟦ b ⟧} (eval t) (eval u)
--}
