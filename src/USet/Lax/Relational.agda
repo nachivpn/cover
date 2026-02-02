@@ -98,7 +98,7 @@ module RelationalCover
     ; transitivity = TNF
     }
 
-  open import USet.Lax.Cover 𝕎i N◇ _∈◇_ Nuc◇ public
+  open import USet.Lax.Cover 𝕎i Nuc◇ public
 
   ◇'-to-⟨R⟩' : {A : USet} → ◇' A →̇ ⟨R⟩' A
   ◇'-to-⟨R⟩' .apply ((v , r) , f) = v , r , f ≡-refl
@@ -119,7 +119,7 @@ module RelationalCover
       ∘' (R-localize[ A ]
       ∘' map𝒥' (◇'-to-⟨R⟩' {A}))
 
-    open LocalizedCover N₊ _∈₊_ Nuc₊ (λ {A} → ◇'-localize[ A ]) public
+    open LocalizedCover Nuc₊ (λ {A} → ◇'-localize[ A ]) public
 
     open LocalizedRelational N₊ _∈₊_ Nuc₊ R-localize[_]
 

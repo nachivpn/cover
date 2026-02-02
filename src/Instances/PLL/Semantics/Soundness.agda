@@ -1,22 +1,23 @@
 open import HeytingAlgebras
+open import Instances.PLL.System
+open import Instances.PLL.Semantics.Entailment
+import Instances.PLL.Semantics.Interpretation as Interpretation
 
-open import Instances.IPL.System
-open import Instances.IPL.Semantics.Entailment
-import Instances.IPL.Semantics.Interpretation as Interpretation
-
-module Instances.IPL.Semantics.Soundness where
+module Instances.PLL.Semantics.Soundness where
 
 module Proof
-  (ℋ : HeytingAlgebra)
-  (open HeytingAlgebra ℋ using (Carrier))
+  (𝒜 : PLLAlgebra)
+  (open PLLAlgebra 𝒜 using (Carrier))
   (V𝕡 : Atom → Carrier) -- Valuation of proposition 𝕡
   where
 
-  open Interpretation ℋ V𝕡
+  open Interpretation 𝒜 V𝕡
 
-  open HeytingAlgebra ℋ
+  open PLLAlgebra 𝒜
     using ()
-    renaming ( maximum to unit'
+    renaming (
+             heytingAlgebra to ℋ
+             ; maximum to unit'
              ; minimum to init'
              ; refl to ≤-refl
              ; trans to ≤-trans
@@ -28,7 +29,12 @@ module Proof
              ; x≤x∨y to inj₁'
              ; y≤x∨y to inj₂'
              ; ∨-least to [_,_]'
+             ; x≤◇x to point'
+             ; ◇◇x≤◇x to join'
+             ; x∧◇y≤◇⟨x∧y⟩ to strong'
+             ; ◇-monotone to fmap'
              ) public
+  
   open import Relation.Binary.Lattice.Properties.HeytingAlgebra ℋ
     renaming (∧-distribˡ-∨-≤ to ∧'-distr-∨'-forth) public
 
@@ -64,7 +70,11 @@ module Proof
   ⟦-⟧-sound {Γ} {c} (∨-E {.Γ} {a} {b} {.c} t u1 u2)
     = ≤-trans ⟨ ≤-refl , ⟦-⟧-sound t ⟩'
         (≤-trans (∧'-distr-∨'-forth ⟦ Γ ⟧c ⟦ a ⟧ ⟦ b ⟧) [ ⟦-⟧-sound u1 , ⟦-⟧-sound u2 ]')
+  ⟦-⟧-sound {Γ} {c} (◇-I t)
+    = ≤-trans (⟦-⟧-sound t) point'
+  ⟦-⟧-sound {Γ} {c} (◇-B t u)
+    = ≤-trans ⟨ ≤-refl , ⟦-⟧-sound t ⟩' (≤-trans strong' (≤-trans (fmap' (⟦-⟧-sound u)) join'))
 
 -- deductive soundness
 soundness : Γ ⊢ a → Γ ⊨ a
-soundness t ℋ V𝕓 = let open Proof ℋ V𝕓 in ⟦-⟧-sound t
+soundness t 𝒜 V𝕓 = let open Proof 𝒜 V𝕓 in ⟦-⟧-sound t

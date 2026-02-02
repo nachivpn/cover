@@ -53,6 +53,10 @@ WINF = Identity.weakIdentity INF
 WTNF = Transitivity.weakTransitivity TNF
 
 open StrongMonad RNF WINF WTNF
+  renaming ( point' to 𝒥'-point
+           ; join' to 𝒥'-join
+           )
+  public
 
 -- Localized upper set
 record LUSet : Set₁ where
@@ -70,7 +74,7 @@ record LUSet : Set₁ where
 
 -- Freely localize an arbitrary USet
 FromUSet : USet → LUSet
-FromUSet A = luset (𝒥' A) (join' {A})
+FromUSet A = luset (𝒥' A) (𝒥'-join {A})
 
 open LUSet
 

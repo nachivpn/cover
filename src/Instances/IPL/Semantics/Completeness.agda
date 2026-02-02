@@ -1,5 +1,6 @@
+open import HeytingAlgebras
+
 open import Instances.IPL.System
-open import Instances.IPL.Semantics.Lib
 open import Instances.IPL.Semantics.Entailment
 import Instances.IPL.Semantics.Interpretation as Interpretation
 

@@ -2,22 +2,23 @@
 
 open import HeytingAlgebras
 
-open import Instances.IPL.System
+open import Instances.PLL.System
 
-module Instances.IPL.Semantics.Interpretation
+module Instances.PLL.Semantics.Interpretation
   -- Model
-  (ℋ : HeytingAlgebra)
+  (𝒜 : PLLAlgebra)
   -- Valuation for atoms
-  (V𝕡 : Atom → ℋ .HeytingAlgebra.Carrier)  
+  (V𝕡 : Atom → 𝒜 .PLLAlgebra.Carrier)  
   where
 
-open HeytingAlgebra ℋ
+open PLLAlgebra 𝒜
   renaming ( Carrier to H
            ; ⊤ to ⊤'
            ; ⊥ to ⊥'
            ; _∧_ to _∧'_
            ; _∨_ to _∨'_
            ; _⇨_ to _⇒'_
+           ; ◇_ to ◇'_
            ) public
 
 -- Interpretation of a formula
@@ -28,6 +29,7 @@ open HeytingAlgebra ℋ
 ⟦ a ⇒ b ⟧ = ⟦ a ⟧ ⇒' ⟦ b ⟧
 ⟦ a ∧ b ⟧ = ⟦ a ⟧ ∧' ⟦ b ⟧
 ⟦ a ∨ b ⟧ = ⟦ a ⟧ ∨' ⟦ b ⟧
+⟦ ◇ a   ⟧ = ◇' ⟦ a ⟧
 
 -- Interpretation of a context
 ⟦_⟧c : Ctx → H

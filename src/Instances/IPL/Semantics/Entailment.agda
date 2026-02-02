@@ -1,7 +1,8 @@
 {-# OPTIONS --safe #-}
 
+open import HeytingAlgebras
+
 open import Instances.IPL.System
-open import Instances.IPL.Semantics.Lib
 import Instances.IPL.Semantics.Interpretation as Interpretation
 
 module Instances.IPL.Semantics.Entailment
