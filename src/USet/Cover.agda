@@ -44,8 +44,8 @@ open import USet.Base 𝕎
 map𝒞' : {A B : USet} → (f : A →̇ B) → 𝒞' A →̇ 𝒞' B
 map𝒞' f .apply (n , g) = n , f .apply ∘ g
 
-×'-distr-forth' : {A B : USet} → 𝒞' (A ×' B) →̇ (𝒞' A ×' 𝒞' B)
-×'-distr-forth' .apply (n , f) = (n , (proj₁ ∘ f)) , (n , (proj₂ ∘ f))
+𝒞'-distrib-×'-forth : {A B : USet} → 𝒞' (A ×' B) →̇ (𝒞' A ×' 𝒞' B)
+𝒞'-distrib-×'-forth .apply (n , f) = (n , (proj₁ ∘ f)) , (n , (proj₂ ∘ f))
 
 module _ {A B : USet} (run : {w : W} (n : N w) (f : ForAllW n (A ₀_)) → B ₀ w) where
 
@@ -98,8 +98,8 @@ module StrongJoin (RNF : Reachability) (WTNF : WeakTransitivity) where
   letin' : {G A B : USet} → (G →̇ 𝒞' A) → ((G ×' A) →̇ 𝒞' B) → (G →̇ 𝒞' B)
   letin' {G} {A} {B} t u = ((join' {B} ∘' map𝒞' u) ∘' strength' {G} {A}) ∘' ⟨ id' , t ⟩'
 
-  ×'-distr-back' : {A B : USet} → (𝒞' A ×' 𝒞' B) →̇ 𝒞' (A ×' B)
-  ×'-distr-back' {A} {B} = (join' {A ×' B} ∘' map𝒞' (swapped-strength' {A} {B})) ∘' strength' {𝒞' A} {B}
+  𝒞'-distrib-×'-back : {A B : USet} → (𝒞' A ×' 𝒞' B) →̇ 𝒞' (A ×' B)
+  𝒞'-distrib-×'-back {A} {B} = (join' {A ×' B} ∘' map𝒞' (swapped-strength' {A} {B})) ∘' strength' {𝒞' A} {B}
 
 -- Closure operator (Goldblatt10)
 module Monad (WINF : WeakIdentity) (WTNF : WeakTransitivity) where
@@ -115,13 +115,13 @@ module StrongMonad (RNF : Reachability) (WINF : WeakIdentity) (WTNF : WeakTransi
 module ×'-distr (WCNF : WeaklyClosedUnderInt) where
   open WeaklyClosedUnderInt WCNF
 
-  ×'-distr-back' : {A B : USet} → (𝒞' A ×' 𝒞' B) →̇ 𝒞' (A ×' B)
-  ×'-distr-back' {A} {B} .apply ((n1 , f1) , (n2 , f2)) = (n1 ⊗ n2) , λ p →
+  𝒞'-distrib-×'-back : {A B : USet} → (𝒞' A ×' 𝒞' B) →̇ 𝒞' (A ×' B)
+  𝒞'-distrib-×'-back {A} {B} .apply ((n1 , f1) , (n2 , f2)) = (n1 ⊗ n2) , λ p →
     let (v1 , v2 , p1 , i1 , p2 , i2) = ⊗-bwd-reachable n1 n2 p
     in wk A i1 (f1 p1) , wk B i2 (f2 p2)
 
   pr𝒞' : {G A B : USet} → G →̇ 𝒞' A → G →̇ 𝒞' B → G →̇ 𝒞' (A ×' B)
-  pr𝒞' {G} {A} {B} t u = ×'-distr-back' {A = A} {B = B} ∘' ⟨ t , u ⟩'
+  pr𝒞' {G} {A} {B} t u = 𝒞'-distrib-×'-back {A = A} {B = B} ∘' ⟨ t , u ⟩'
 
   letin' : {D G A B : USet} → (𝒞' D ×' G) →̇ 𝒞' A → (𝒞' (D ×' A) ×' G) →̇ B
     → (𝒞' D ×' G) →̇ B
@@ -130,11 +130,16 @@ module ×'-distr (WCNF : WeaklyClosedUnderInt) where
 module ⊤'-distr (NENF : NonEmpty) where
   open NonEmpty NENF
 
-  ⊤'-distr-back' : ⊤' →̇ 𝒞' ⊤'
-  ⊤'-distr-back' .apply _ = unitN[ _ ] , _
+  𝒞'-distrib-⊤'-back : ⊤' →̇ 𝒞' ⊤'
+  𝒞'-distrib-⊤'-back .apply _ = unitN[ _ ] , _
 
   unit𝒞' : {G : USet} → G →̇ 𝒞' ⊤'
-  unit𝒞' = ⊤'-distr-back' ∘' unit'
+  unit𝒞' = 𝒞'-distrib-⊤'-back ∘' unit'
 
   nec' : {G A : USet} → ⊤' →̇ A → G →̇ 𝒞' A
   nec' f = map𝒞' f ∘' unit𝒞'
+
+module Monoidal (WCNF : WeaklyClosedUnderInt) (NENF : NonEmpty) where
+  open ×'-distr WCNF public
+  open ⊤'-distr NENF public
+  

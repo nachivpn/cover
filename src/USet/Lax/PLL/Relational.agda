@@ -45,7 +45,7 @@ module LocalizedRelational
   (N   : W → Set)
   (_∈_ : (v : W) {w : W} → N w → Set)
   (let open NF 𝕎i N _∈_)
-  (Nuc  : Nuclear)
+  (Nuc  : NuclearFrame)
   (let open USetLoc 𝕎i N _∈_ Nuc)
   (R-localize[_] : (A : USet) → 𝒥' (⟨R⟩' A) →̇ (⟨R⟩' 𝒥' A))
   where
@@ -90,7 +90,7 @@ module RelationalCover
     ; transN-bwd-member = λ {w} (u , r) h p → let (v , r') = h ≡-refl in u , ≡-refl , p
     }
 
-  Nuc◇ : NF.Nuclear 𝕎i N◇ _∈◇_
+  Nuc◇ : NF.NuclearFrame 𝕎i N◇ _∈◇_
   Nuc◇ = record
     { refinement   = MNF
     ; reachability = RNF
@@ -109,7 +109,7 @@ module RelationalCover
   module LocalizedRelationalCover
     (N₊   : W → Set)
     (_∈₊_ : (v : W) {w : W} → N₊ w → Set)
-    (Nuc₊ : NF.Nuclear 𝕎i N₊ _∈₊_)
+    (Nuc₊ : NF.NuclearFrame 𝕎i N₊ _∈₊_)
     (let open USetLoc 𝕎i N₊ _∈₊_ Nuc₊)
     (R-localize[_] : (A : USet) → 𝒥' (⟨R⟩' A) →̇ (⟨R⟩' 𝒥' A))
     where

@@ -126,7 +126,7 @@ transK-bwd-member (branch x k k') h (right p) =
   let (vl , p' , pr) = transK-bwd-member k' (h ∘ right) p
   in vl , right p' , pr
 
-Nuc : Nuclear
+Nuc : NuclearFrame
 Nuc = record
   { refinement   = record
     { wkN         = wkK

@@ -8,6 +8,7 @@ open import USet.Cover
 open import USet.Localized
 open import USet.Lax.PLL.Cover
 open import USet.Lax.PLL.Relational
+open import USet.Box.CKBox.Cover
 
 -- Boilerplate for systems
 open import Context

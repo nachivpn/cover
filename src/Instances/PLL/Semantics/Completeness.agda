@@ -70,7 +70,7 @@ transK₊-bwd-member (branch x k k') h (right p) =
   let (vl , p' , pr) = transK₊-bwd-member k' (h ∘ right) p
   in vl , right p' , pr
 
-Nuc₊ : Nuclear
+Nuc₊ : NuclearFrame
 Nuc₊ = record
   { refinement   = record
     { wkN         = wkK₊
@@ -110,7 +110,7 @@ open import Frame.NFrame 𝕎 K◇ _∈◇_
   renaming ( _≼_ to _≼◇_
            ; ForAllW to ForAllW◇
            ; Exists∈ to Exists∈◇
-           ; Nuclear to Nuclear◇
+           ; NuclearFrame to NuclearFrame◇
            )
 
 wkK◇ : Γ ⊆ Γ' → K◇ Γ → K◇ Γ'
@@ -165,7 +165,7 @@ transK◇-bwd-member (branch x k k') h (right p) =
   let (vl , p' , pr) = transK◇-bwd-member k' (h ∘ right) p
   in vl , right p' , pr
 
-Nuc◇ : Nuclear◇
+Nuc◇ : NuclearFrame◇
 Nuc◇ = record
   { refinement   = record
     { wkN         = wkK◇

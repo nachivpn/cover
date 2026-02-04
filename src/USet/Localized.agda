@@ -10,15 +10,15 @@ module USet.Localized
   (N   : W → Set)
   (_∈_ : (v : W) {w : W} → N w → Set)
   (let open NF 𝕎 N _∈_)
-  (Nuc  : {-NF.-} Nuclear)
+  (Nuc  : {-NF.-} NuclearFrame)
   where
 
-open Nuclear Nuc
+open NuclearFrame Nuc
 
-MNF = Nuc .Nuclear.refinement
-RNF = Nuc .Nuclear.reachability
-INF = Nuc .Nuclear.identity
-TNF = Nuc .Nuclear.transitivity
+MNF = Nuc .NuclearFrame.refinement
+RNF = Nuc .NuclearFrame.reachability
+INF = Nuc .NuclearFrame.identity
+TNF = Nuc .NuclearFrame.transitivity
 
 open import Function using (id ; const ; _∘_ ; flip)
 open import Relation.Binary.PropositionalEquality
@@ -105,7 +105,7 @@ _×₊_ : LUSet → LUSet → LUSet
 luset A lA ×₊ luset B lB = luset (A ×' B) localize-×'
   where
   localize-×' : 𝒥' (A ×' B) →̇ (A ×' B)
-  localize-×' = (lA ×'-map lB) ∘' ×'-distr-forth' {A} {B}
+  localize-×' = (lA ×'-map lB) ∘' 𝒞'-distrib-×'-forth {A} {B}
 
 --
 -- Implication/Exponential

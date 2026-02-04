@@ -13,16 +13,16 @@ module USet.Lax.PLL.Cover
   (𝕎    : Preorder W _⊆_)
   {N◇    : W → Set}
   {_∈◇_  : (v : W) {w : W} → N◇ w → Set}
-  (Nuc◇  : NF.Nuclear 𝕎 N◇ _∈◇_)
+  (Nuc◇  : NF.NuclearFrame 𝕎 N◇ _∈◇_)
   where
 
 open import USet.Base 𝕎
 
-MNF◇  = Nuc◇ .NF.Nuclear.refinement
-RNF◇  = Nuc◇ .NF.Nuclear.reachability
-INF◇  = Nuc◇ .NF.Nuclear.identity
+MNF◇  = Nuc◇ .NF.NuclearFrame.refinement
+RNF◇  = Nuc◇ .NF.NuclearFrame.reachability
+INF◇  = Nuc◇ .NF.NuclearFrame.identity
 WINF◇ = NF.Identity.weakIdentity INF◇
-TNF◇  = Nuc◇ .NF.Nuclear.transitivity
+TNF◇  = Nuc◇ .NF.NuclearFrame.transitivity
 WTNF◇ = NF.Transitivity.weakTransitivity TNF◇
 
 open import USet.Cover 𝕎 N◇ _∈◇_ MNF◇
@@ -30,19 +30,19 @@ open import USet.Cover 𝕎 N◇ _∈◇_ MNF◇
     (𝒞' to ◇'
     ; map𝒞' to ◇'-map
     ; run𝒞' to ◇'-run
-    ; ×'-distr-forth' to ◇'-distrib-×'-forth
+    ; 𝒞'-distrib-×'-forth to ◇'-distrib-×'-forth
     )
   public
 
 open StrongMonad RNF◇ WINF◇ WTNF◇
-  renaming ( ×'-distr-back' to ◇'-distrib-×'-back
+  renaming ( 𝒞'-distrib-×'-back to ◇'-distrib-×'-back
            ; join' to ◇'-join)
   public
 
 module LocalizedCover
   {N₊   : W → Set}
   {_∈₊_ : (v : W) {w : W} → N₊ w → Set}
-  (Nuc₊ : NF.Nuclear 𝕎 N₊ _∈₊_)
+  (Nuc₊ : NF.NuclearFrame 𝕎 N₊ _∈₊_)
   (let open USetLoc 𝕎 N₊ _∈₊_ Nuc₊)
   (◇'-localize : {A : USet} → 𝒥' (◇' A) →̇ ◇' (𝒥' A))
   where
