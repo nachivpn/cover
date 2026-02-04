@@ -7,7 +7,7 @@ import USet.Localized as USetLoc
 open import Data.Product
   using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂ ; curry ; uncurry)
 
-module USet.Lax.Relational
+module USet.Lax.PLL.Relational
   {W     : Set}
   {_⊆_   : (w w' : W) → Set}
   {R     : (w v : W) → Set}
@@ -98,7 +98,7 @@ module RelationalCover
     ; transitivity = TNF
     }
 
-  open import USet.Lax.Cover 𝕎i Nuc◇ public
+  open import USet.Lax.PLL.Cover 𝕎i Nuc◇ public
 
   ◇'-to-⟨R⟩' : {A : USet} → ◇' A →̇ ⟨R⟩' A
   ◇'-to-⟨R⟩' .apply ((v , r) , f) = v , r , f ≡-refl

@@ -247,7 +247,7 @@ open import USet.Base 𝕎
 --imports 𝒥', etc.
 open import USet.Localized 𝕎 K₊ _∈₊_ Nuc₊
 -- imports ◇', etc.
-open import USet.Lax.Cover 𝕎 Nuc◇
+open import USet.Lax.PLL.Cover 𝕎 Nuc◇
 
 inclK : K₊ Γ → K◇ Γ
 inclK (leaf _)        = leaf _

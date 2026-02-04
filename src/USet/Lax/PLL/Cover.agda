@@ -7,7 +7,7 @@ import USet.Localized as USetLoc
 open import Data.Product
   using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂ ; curry ; uncurry)
 
-module USet.Lax.Cover
+module USet.Lax.PLL.Cover
   {W     : Set}
   {_⊆_   : (w w' : W) → Set}
   (𝕎    : Preorder W _⊆_)
