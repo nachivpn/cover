@@ -9,6 +9,14 @@ private 1ℓ = suc 0ℓ
 HeytingAlgebra = LHeytingAlgebra 1ℓ 0ℓ 0ℓ
 module HeytingAlgebra = LHeytingAlgebra
 
+private
+  module LocalProperties (ℋ : HeytingAlgebra) where
+
+    open HeytingAlgebra ℋ
+
+    x∧y≤y∧x : (x y : Carrier) → x ∧ y ≤ y ∧ x
+    x∧y≤y∧x x y = ∧-greatest (x∧y≤y x y) (x∧y≤x x y)
+
 ------------------
 -- Box algebras --
 ------------------
@@ -25,7 +33,7 @@ record CKBoxAlgebra : Set₂ where
     ◻_          : Carrier → Carrier
     ◻-resp-≈    : {x y : Carrier} → x ≈ y → ◻ x ≈ ◻ y
 
-    -- ◻ distributes over finite meets 
+    -- ◻ distributes over finite meets
     ◻-distrib-∧      : {x y : Carrier} → ◻ (x ∧ y) ≈ ◻ x ∧ ◻ y
     ◻-distrib-⊤-back : ⊤ ≤ ◻ ⊤
 
@@ -77,12 +85,9 @@ record SLAlgebra : Set₂ where
 
     -- inequality that implies monotonicity
     ◇x≤◇⟨x∨y⟩   : {x y : Carrier} → ◇ x ≤ ◇ (x ∨ y)
-    
+
     -- inequality corresponding to strength
     x∧◇y≤◇⟨x∧y⟩ : {x y : Carrier} → x ∧ ◇ y ≤ ◇ (x ∧ y)
-
-  x∧y≤y∧x : (x y : Carrier) → x ∧ y ≤ y ∧ x
-  x∧y≤y∧x x y = ∧-greatest (x∧y≤y x y) (x∧y≤x x y)
 
   ◇-monotone : {a b : Carrier} → a ≤ b → ◇ a ≤ ◇ b
   ◇-monotone {a} {b} i = trans (◇x≤◇⟨x∨y⟩ {a} {b}) ◇⟨a∨b⟩≤◇b
@@ -91,6 +96,8 @@ record SLAlgebra : Set₂ where
       b≤a∨b     = y≤x∨y a b
       a∨b≈b     = antisym a∨b≤b b≤a∨b
       ◇⟨a∨b⟩≤◇b = ≤-respʳ-≈ (◇-resp-≈ a∨b≈b) refl
+
+  open LocalProperties ℋ
 
   ◇x∧y≤◇⟨x∧y⟩ : (x y : Carrier) → ◇ x ∧ y ≤ ◇ (x ∧ y)
   ◇x∧y≤◇⟨x∧y⟩ x y = trans (x∧y≤y∧x (◇ x) y)
@@ -106,7 +113,7 @@ record PLLAlgebra : Set₂ where
   field
     -- inflationary
     x≤◇x   : {x : Carrier} → x ≤ ◇ x
-    
+
     -- inequality that implies idempotency
     ◇◇x≤◇x : {x : Carrier} → ◇ ◇ x ≤ ◇ x
 
@@ -121,6 +128,49 @@ record PLLAlgebra : Set₂ where
       ◇x∧◇y≤◇⟨x∧y⟩ : ◇ x ∧ ◇ y ≤ ◇ (x ∧ y)
       ◇x∧◇y≤◇⟨x∧y⟩ = trans (x∧◇y≤◇⟨x∧y⟩ {◇ x} {y})
         (trans (◇-monotone (◇x∧y≤◇⟨x∧y⟩ x y)) ◇◇x≤◇x)
+
+------------------
+-- IML Algebras --
+------------------
+
+record CKAlgebra : Set₂ where
+
+  field
+    ℋ : HeytingAlgebra
+
+  open HeytingAlgebra ℋ public
+
+  field
+    ◻_          : Carrier → Carrier
+    ◻-resp-≈    : {x y : Carrier} → x ≈ y → ◻ x ≈ ◻ y
+    ◇_          : Carrier → Carrier
+    ◇-resp-≈    : {x y : Carrier} → x ≈ y → ◇ x ≈ ◇ y
+
+    -- ◻ distributes over finite meets
+    ◻-distrib-∧      : {x y : Carrier} → ◻ (x ∧ y) ≈ ◻ x ∧ ◻ y
+    ◻-distrib-⊤-back : ⊤ ≤ ◻ ⊤
+
+    -- implies monotonicity for ◇
+    ◇x≤◇⟨x∨y⟩    : {x y : Carrier} → ◇ x ≤ ◇ (x ∨ y)
+
+    -- enables validation of "◻ (φ → ψ) → (◇ φ → ◇ ψ)"
+    ◻x∧◇y≤◇⟨x∧y⟩ : {x y : Carrier} → ◻ x ∧ ◇ y ≤ ◇ (x ∧ y)
+
+  ◻-distrib-⊤ : {x y : Carrier} → ◻ ⊤ ≈ ⊤
+  ◻-distrib-⊤ = antisym (maximum _) ◻-distrib-⊤-back
+
+  ◻-monotone : {a b : Carrier} → a ≤ b → ◻ a ≤ ◻ b
+  ◻-monotone {a} {b} i = trans ◻a≤◻a∧◻b ◻a∧◻b≤◻b
+    where
+
+      ◻a≤◻a∧◻b : ◻ a ≤ ◻ a ∧ ◻ b
+      ◻a≤◻a∧◻b = ≤-respʳ-≈ ◻a∧◻b≈◻a refl
+        where
+          a≈a∧b    = antisym (∧-greatest refl i) (x∧y≤x _ _)
+          ◻a∧◻b≈◻a = Eq.trans (◻-resp-≈ a≈a∧b) ◻-distrib-∧
+
+      ◻a∧◻b≤◻b : ◻ a ∧ ◻ b ≤ ◻ b
+      ◻a∧◻b≤◻b = x∧y≤y (◻ a) (◻ b)
 
 ------------------------------------
 -- Properties of Heyting Algebras --
@@ -154,13 +204,13 @@ record HasNucOp (ℋ : HeytingAlgebra) : Set₂ where
     -- operator
     ◇_          : Carrier → Carrier
     ◇-resp-≈    : {x y : Carrier} → x ≈ y → ◇ x ≈ ◇ y
-    
+
     -- inflationary
     x≤◇x        : {x : Carrier} → x ≤ ◇ x
-    
+
     -- inequality that implies idempotency
     ◇◇x≤◇x      : {x : Carrier} → ◇ ◇ x ≤ ◇ x
-    
+
     -- inequality that implies meet-preservation
     ◇-distrib-∧ : {x y : Carrier} → ◇ (x ∧ y) ≈ ◇ x ∧ ◇ y
 
