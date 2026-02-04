@@ -64,15 +64,17 @@ module LocalizedCover
   ◇₊-distrib-×₊ : {X Y : LUSet}
     → (◇₊ (X ×₊ Y)) ↔̇₊ ((◇₊ X) ×₊ (◇₊ Y))
   ◇₊-distrib-×₊ {X} {Y} = ◇'-distrib-×'-forth {𝒳 X} {𝒳 Y} , ◇'-distrib-×'-back {𝒳 X} {𝒳 Y}
-  
+
   open import HeytingAlgebras
 
-  LUSetPLLA : PLLAlgebra
-  LUSetPLLA = record
-    { heytingAlgebra = LUSetHA
-    ; ◇_             = ◇₊_
+  LUSetNuc : HasNucOp LUSetHA
+  LUSetNuc = record
+    { ◇_             = ◇₊_
     ; ◇-resp-≈       = λ { {X} {Y} (f , g) → ◇₊-map {X} {Y} f , ◇₊-map {Y} {X} g }
     ; x≤◇x           = λ {X} → point₊ {X}
     ; ◇◇x≤◇x         = λ {X} → join₊ {X}
     ; ◇-distrib-∧    = λ {X} {Y} → ◇₊-distrib-×₊ {X} {Y}
     }
+
+  LUSetPLLA : PLLAlgebra
+  LUSetPLLA = Properties.nucPLLAlgebra LUSetNuc

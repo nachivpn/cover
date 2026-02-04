@@ -9,41 +9,28 @@ private 1ℓ = suc 0ℓ
 HeytingAlgebra = LHeytingAlgebra 1ℓ 0ℓ 0ℓ
 module HeytingAlgebra = LHeytingAlgebra
 
-record MonAlgebra : Set₂ where
-  field
-    heytingAlgebra : HeytingAlgebra
+------------------
+-- Box algebras --
+------------------
 
-  open HeytingAlgebra heytingAlgebra public
-
-  field
-    ○_         : Carrier → Carrier
-    ○-resp-≈   : {x y : Carrier} → x ≈ y → ○ x ≈ ○ y
-    ○-monotone : {x y : Carrier} → x ≤ y → ○ x ≤ ○ y
-
-  ○-distrib-∧-forth : {x y : Carrier} → ○ (x ∧ y) ≤ ○ x ∧ ○ y
-  ○-distrib-∧-forth = ∧-greatest (○-monotone (x∧y≤x _ _)) (○-monotone (x∧y≤y _ _))
-
-  ○-distrib-⊤-forth : ○ ⊤ ≤ ⊤
-  ○-distrib-⊤-forth = maximum (○ ⊤)
-
-  ○-distrib-∨-back : {x y : Carrier} → ○ x ∨ ○ y ≤ ○ (x ∨ y)
-  ○-distrib-∨-back = ∨-least (○-monotone (x≤x∨y _ _)) (○-monotone (y≤x∨y _ _))
-  
 record CKBoxAlgebra : Set₂ where
 
   field
-    heytingAlgebra : HeytingAlgebra
+    ℋ : HeytingAlgebra
 
-  open HeytingAlgebra heytingAlgebra public
+  open HeytingAlgebra ℋ public
 
   field
     -- operator
     ◻_          : Carrier → Carrier
     ◻-resp-≈    : {x y : Carrier} → x ≈ y → ◻ x ≈ ◻ y
 
-    -- structure
+    -- ◻ distributes over finite meets 
     ◻-distrib-∧      : {x y : Carrier} → ◻ (x ∧ y) ≈ ◻ x ∧ ◻ y
     ◻-distrib-⊤-back : ⊤ ≤ ◻ ⊤
+
+  ◻-distrib-⊤ : {x y : Carrier} → ◻ ⊤ ≈ ⊤
+  ◻-distrib-⊤ = antisym (maximum _) ◻-distrib-⊤-back
 
   ◻-monotone : {a b : Carrier} → a ≤ b → ◻ a ≤ ◻ b
   ◻-monotone {a} {b} i = trans ◻a≤◻a∧◻b ◻a∧◻b≤◻b
@@ -58,57 +45,123 @@ record CKBoxAlgebra : Set₂ where
       ◻a∧◻b≤◻b : ◻ a ∧ ◻ b ≤ ◻ b
       ◻a∧◻b≤◻b = x∧y≤y (◻ a) (◻ b)
 
-  CKBoxisMon : MonAlgebra
-  CKBoxisMon = record
-    { heytingAlgebra = heytingAlgebra
-    ; ○_             = ◻_
-    ; ○-resp-≈       = ◻-resp-≈
-    ; ○-monotone     = ◻-monotone
-    }
+record CS4BoxAlgebra : Set₂ where
 
-  open MonAlgebra CKBoxisMon using ()
-    renaming (○-distrib-⊤-forth to ◻-distrib-⊤-forth)
+  field
+    ckBoxAlgebra : CKBoxAlgebra
 
-  ◻-distrib-⊤ : {x y : Carrier} → ◻ ⊤ ≈ ⊤
-  ◻-distrib-⊤ = antisym ◻-distrib-⊤-forth ◻-distrib-⊤-back
+  open CKBoxAlgebra ckBoxAlgebra public
+
+  field
+    -- deflationary
+    ◻x≤x        : {x : Carrier} → ◻ x ≤ x
+
+    -- inequality that implies idempotency
+    ◻x≤◻◻x      : {x : Carrier} → ◻ x ≤ ◻ ◻ x
+
+----------------------
+-- Diamond algebras --
+----------------------
 
 record SLAlgebra : Set₂ where
-  field
-    heytingAlgebra : HeytingAlgebra
 
-  open HeytingAlgebra heytingAlgebra public
+  field
+    ℋ : HeytingAlgebra
+
+  open HeytingAlgebra ℋ public
 
   field
     -- operator
     ◇_          : Carrier → Carrier
     ◇-resp-≈    : {x y : Carrier} → x ≈ y → ◇ x ≈ ◇ y
 
-    -- structure of the operator
-    ◇-monotone  : {x y : Carrier} → x ≤ y → ◇ x ≤ ◇ y
+    -- inequality that implies monotonicity
+    ◇x≤◇⟨x∨y⟩   : {x y : Carrier} → ◇ x ≤ ◇ (x ∨ y)
+    
+    -- inequality corresponding to strength
     x∧◇y≤◇⟨x∧y⟩ : {x y : Carrier} → x ∧ ◇ y ≤ ◇ (x ∧ y)
 
-  SLisMon : MonAlgebra
-  SLisMon = record
-    { heytingAlgebra = heytingAlgebra
-    ; ○_             = ◇_
-    ; ○-resp-≈       = ◇-resp-≈
-    ; ○-monotone     = ◇-monotone
-    }
-    
-record PLLAlgebra : Set₂ where
-  field
-    heytingAlgebra : HeytingAlgebra
+  x∧y≤y∧x : (x y : Carrier) → x ∧ y ≤ y ∧ x
+  x∧y≤y∧x x y = ∧-greatest (x∧y≤y x y) (x∧y≤x x y)
 
-  open HeytingAlgebra heytingAlgebra public
+  ◇-monotone : {a b : Carrier} → a ≤ b → ◇ a ≤ ◇ b
+  ◇-monotone {a} {b} i = trans (◇x≤◇⟨x∨y⟩ {a} {b}) ◇⟨a∨b⟩≤◇b
+    where
+      a∨b≤b     = ∨-least i refl
+      b≤a∨b     = y≤x∨y a b
+      a∨b≈b     = antisym a∨b≤b b≤a∨b
+      ◇⟨a∨b⟩≤◇b = ≤-respʳ-≈ (◇-resp-≈ a∨b≈b) refl
+
+  ◇x∧y≤◇⟨x∧y⟩ : (x y : Carrier) → ◇ x ∧ y ≤ ◇ (x ∧ y)
+  ◇x∧y≤◇⟨x∧y⟩ x y = trans (x∧y≤y∧x (◇ x) y)
+    (trans (x∧◇y≤◇⟨x∧y⟩ {y} {x}) (◇-monotone (x∧y≤y∧x y x)))
+
+record PLLAlgebra : Set₂ where
+
+  field
+    slAlgebra : SLAlgebra
+
+  open SLAlgebra slAlgebra public
+
+  field
+    -- inflationary
+    x≤◇x   : {x : Carrier} → x ≤ ◇ x
+    
+    -- inequality that implies idempotency
+    ◇◇x≤◇x : {x : Carrier} → ◇ ◇ x ≤ ◇ x
+
+  ◇-distrib-∧ : {x y : Carrier} → ◇ (x ∧ y) ≈ ◇ x ∧ ◇ y
+  ◇-distrib-∧ {x} {y} = antisym ◇⟨x∧y⟩≤◇x∧◇y ◇x∧◇y≤◇⟨x∧y⟩
+    where
+      ◇⟨x∧y⟩≤◇x∧◇y : ◇ (x ∧ y) ≤ ◇ x ∧ ◇ y
+      ◇⟨x∧y⟩≤◇x∧◇y = ∧-greatest
+        (◇-monotone (x∧y≤x x y))
+        (◇-monotone (x∧y≤y x y))
+
+      ◇x∧◇y≤◇⟨x∧y⟩ : ◇ x ∧ ◇ y ≤ ◇ (x ∧ y)
+      ◇x∧◇y≤◇⟨x∧y⟩ = trans (x∧◇y≤◇⟨x∧y⟩ {◇ x} {y})
+        (trans (◇-monotone (◇x∧y≤◇⟨x∧y⟩ x y)) ◇◇x≤◇x)
+
+------------------------------------
+-- Properties of Heyting Algebras --
+------------------------------------
+
+-- Has a monotonic operator
+record HasMonOp (ℋ : HeytingAlgebra) : Set₂ where
+
+  open HeytingAlgebra ℋ public
+
+  field
+    𝕞          : Carrier → Carrier
+    𝕞-resp-≈   : {x y : Carrier} → x ≈ y → 𝕞 x ≈ 𝕞 y
+    𝕞-monotone : {x y : Carrier} → x ≤ y → 𝕞 x ≤ 𝕞 y
+
+  𝕞-distrib-∧-forth : {x y : Carrier} → 𝕞 (x ∧ y) ≤ 𝕞 x ∧ 𝕞 y
+  𝕞-distrib-∧-forth = ∧-greatest (𝕞-monotone (x∧y≤x _ _)) (𝕞-monotone (x∧y≤y _ _))
+
+  𝕞-distrib-⊤-forth : 𝕞 ⊤ ≤ ⊤
+  𝕞-distrib-⊤-forth = maximum (𝕞 ⊤)
+
+  𝕞-distrib-∨-back : {x y : Carrier} → 𝕞 x ∨ 𝕞 y ≤ 𝕞 (x ∨ y)
+  𝕞-distrib-∨-back = ∨-least (𝕞-monotone (x≤x∨y _ _)) (𝕞-monotone (y≤x∨y _ _))
+
+-- Has a nucleus/nuclear operator
+record HasNucOp (ℋ : HeytingAlgebra) : Set₂ where
+
+  open HeytingAlgebra ℋ public
 
   field
     -- operator
     ◇_          : Carrier → Carrier
     ◇-resp-≈    : {x y : Carrier} → x ≈ y → ◇ x ≈ ◇ y
-
-    -- structure of the operator
+    
+    -- inflationary
     x≤◇x        : {x : Carrier} → x ≤ ◇ x
+    
+    -- inequality that implies idempotency
     ◇◇x≤◇x      : {x : Carrier} → ◇ ◇ x ≤ ◇ x
+    
+    -- inequality that implies meet-preservation
     ◇-distrib-∧ : {x y : Carrier} → ◇ (x ∧ y) ≈ ◇ x ∧ ◇ y
 
   ◇-distrib-∧-forth : {x y : Carrier} → ◇ (x ∧ y) ≤ ◇ x ∧ ◇ y
@@ -116,6 +169,9 @@ record PLLAlgebra : Set₂ where
 
   ◇-distrib-∧-back : {x y : Carrier} → ◇ x ∧ ◇ y ≤ ◇ (x ∧ y)
   ◇-distrib-∧-back = ≤-respˡ-≈ ◇-distrib-∧ refl
+
+  ◇-distrib-⊤ : {x y : Carrier} → ◇ ⊤ ≈ ⊤
+  ◇-distrib-⊤ = antisym (maximum _) x≤◇x
 
   ◇-idempotent : {x : Carrier} → ◇ ◇ x ≈ ◇ x
   ◇-idempotent = antisym ◇◇x≤◇x x≤◇x
@@ -125,10 +181,10 @@ record PLLAlgebra : Set₂ where
     where
 
       ◇a≤◇a∧◇b : ◇ a ≤ ◇ a ∧ ◇ b
-      ◇a≤◇a∧◇b = ≤-respʳ-≈ ◇a∧◇b≤◇a refl
+      ◇a≤◇a∧◇b = ≤-respʳ-≈ ◇a∧◇b≈◇a refl
         where
           a≈a∧b    = antisym (∧-greatest refl i) (x∧y≤x _ _)
-          ◇a∧◇b≤◇a = Eq.trans (◇-resp-≈ a≈a∧b) ◇-distrib-∧
+          ◇a∧◇b≈◇a = Eq.trans (◇-resp-≈ a≈a∧b) ◇-distrib-∧
 
       ◇a∧◇b≤◇b : ◇ a ∧ ◇ b ≤ ◇ b
       ◇a∧◇b≤◇b = x∧y≤y (◇ a) (◇ b)
@@ -142,3 +198,38 @@ record PLLAlgebra : Set₂ where
     a∧◇b≤◇b = x∧y≤y a (◇ b)
 
   ◇-strong = x∧◇y≤◇⟨x∧y⟩
+
+module Properties where
+
+  module _ (𝒜 : PLLAlgebra) where
+
+    open PLLAlgebra 𝒜
+
+    PLLAlgebraIsNuclear : HasNucOp ℋ
+    PLLAlgebraIsNuclear = record
+      { ◇_          = ◇_
+      ; ◇-resp-≈    = ◇-resp-≈
+      ; x≤◇x        = x≤◇x
+      ; ◇◇x≤◇x      = ◇◇x≤◇x
+      ; ◇-distrib-∧ = ◇-distrib-∧
+      }
+
+  module _ {ℋ : HeytingAlgebra} (hasNucOp : HasNucOp ℋ) where
+
+    open HasNucOp hasNucOp
+
+    nucSLAlgebra : SLAlgebra
+    nucSLAlgebra = record
+      { ℋ              = ℋ
+      ; ◇_             = ◇_
+      ; ◇-resp-≈       = ◇-resp-≈
+      ; ◇x≤◇⟨x∨y⟩      = ◇-monotone (x≤x∨y _ _)
+      ; x∧◇y≤◇⟨x∧y⟩    = x∧◇y≤◇⟨x∧y⟩
+      }
+
+    nucPLLAlgebra : PLLAlgebra
+    nucPLLAlgebra = record
+      { slAlgebra = nucSLAlgebra
+      ; x≤◇x      = x≤◇x
+      ; ◇◇x≤◇x    = ◇◇x≤◇x
+      }

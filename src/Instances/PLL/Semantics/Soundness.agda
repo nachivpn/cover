@@ -15,9 +15,7 @@ module Proof
 
   open PLLAlgebra 𝒜
     using ()
-    renaming (
-             heytingAlgebra to ℋ
-             ; maximum to unit'
+    renaming ( maximum to unit'
              ; minimum to init'
              ; refl to ≤-refl
              ; trans to ≤-trans
