@@ -55,9 +55,9 @@ wkNf i1 i2 (∨-I1 n)    = ∨-I1 (wkNf i1 i2 n)
 wkNf i1 i2 (∨-I2 n)    = ∨-I2 (wkNf i1 i2 n)
 wkNf i1 i2 (∨-E x n m) = ∨-E (wkNe i1 i2 x) (wkNf i1 (keep i2) n) (wkNf i1 (keep i2) m)
 
-------------------
--- Cover system --
-------------------
+-----------------------
+-- Base cover system --
+-----------------------
 
 data K₊ : Ctx → Ctx → Set where
   leaf    : (Δ Γ : Ctx) → K₊ Δ Γ
