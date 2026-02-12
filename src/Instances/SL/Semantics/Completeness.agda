@@ -219,7 +219,7 @@ open LUSet -- imports localize and 𝒳
   where
   collectAux : (k : K◇ Γ) (f : ForAllW◇ k (Tm' a ₀_)) → Tm' (◇ a) ₀ Γ
   collectAux (dead x)        f = ⊥-E x
-  collectAux (single x)      f = ◇-B x (f here)
+  collectAux (single x)      f = ◇-M x (f here)
   collectAux (branch x k k') f = ∨-E x (collectAux k (f ∘ left)) (collectAux k' (f ∘ right))
 
 ◇'-register : Tm' (◇ a) →̇ ◇' (Tm' a)

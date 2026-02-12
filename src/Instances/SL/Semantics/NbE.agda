@@ -33,7 +33,7 @@ data _⊢Nf_ where
   ∨-I1  : Γ ⊢Nf a → Γ ⊢Nf (a ∨ b)
   ∨-I2  : Γ ⊢Nf b → Γ ⊢Nf (a ∨ b)
   ∨-E   : Γ ⊢Ne (a ∨ b) → (Γ `, a) ⊢Nf c → (Γ `, b) ⊢Nf c → Γ ⊢Nf c
-  ◇-B   : Γ ⊢Ne (◇ a) → (Γ `, a) ⊢Nf b → Γ ⊢Nf (◇ b)
+  ◇-M   : Γ ⊢Ne (◇ a) → (Γ `, a) ⊢Nf b → Γ ⊢Nf (◇ b)
 
 wkNe : Γ ⊆ Γ' → Γ ⊢Ne a → Γ' ⊢Ne a
 wkNf : Γ ⊆ Γ' → Γ ⊢Nf a → Γ' ⊢Nf a
@@ -51,7 +51,7 @@ wkNf i (∧-I n m)     = ∧-I (wkNf i n) (wkNf i m)
 wkNf i (∨-I1 n)      = ∨-I1 (wkNf i n)
 wkNf i (∨-I2 n)      = ∨-I2 (wkNf i n)
 wkNf i (∨-E n m1 m2) = ∨-E (wkNe i n) (wkNf (keep i) m1) (wkNf (keep i) m2)
-wkNf i (◇-B n m)     = ◇-B (wkNe i n) (wkNf (keep i) m)
+wkNf i (◇-M n m)     = ◇-M (wkNe i n) (wkNf (keep i) m)
 
 embNe : Γ ⊢Ne a → Γ ⊢ a
 embNf : Γ ⊢Nf a → Γ ⊢ a
@@ -69,7 +69,7 @@ embNf (∧-I n m)   = ∧-I (embNf n) (embNf m)
 embNf (∨-I1 n)    = ∨-I1 (embNf n)
 embNf (∨-I2 n)    = ∨-I2 (embNf n)
 embNf (∨-E x n m) = ∨-E (embNe x) (embNf n) (embNf m)
-embNf (◇-B n m)   = ◇-B (embNe n) (embNf m)
+embNf (◇-M n m)   = ◇-M (embNe n) (embNf m)
 
 data K₊ : Ctx → Set where
   leaf    : (Γ : Ctx) → K₊ Γ
@@ -278,7 +278,7 @@ open LUSet -- imports localize and 𝒳
 ◇'-collect {a = a} = ◇'-run {Nf' a} collectAux
   where
   collectAux : (k : K◇ Γ) (f : ForAllW◇ k (Nf' a ₀_)) → Nf' (◇ a) ₀ Γ
-  collectAux (single x)      f = ◇-B x (f here)
+  collectAux (single x)      f = ◇-M x (f here)
   collectAux (dead x)        f = ⊥-E x
   collectAux (branch x k k') f = ∨-E x (collectAux k (f ∘ left)) (collectAux k' (f ∘ right))
 

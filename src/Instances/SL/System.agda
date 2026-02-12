@@ -50,7 +50,7 @@ data _⊢_ : Ctx → Form → Set where
   ∨-E   : Γ ⊢ (a ∨ b) → (Γ `, a) ⊢ c → (Γ `, b) ⊢ c → Γ ⊢ c
 
   -- strong functor
-  ◇-B   : Γ ⊢ ◇ a → (Γ `, a) ⊢ b → Γ ⊢ ◇ b
+  ◇-M   : Γ ⊢ ◇ a → (Γ `, a) ⊢ b → Γ ⊢ ◇ b
 
 wkTm : Γ ⊆ Γ' → Γ ⊢ a → Γ' ⊢ a
 wkTm i (hyp x)       = hyp (wkVar i x)
@@ -64,4 +64,4 @@ wkTm i (∧-E2 t)      = ∧-E2 (wkTm i t)
 wkTm i (∨-I1 t)      = ∨-I1 (wkTm i t)
 wkTm i (∨-I2 t)      = ∨-I2 (wkTm i t)
 wkTm i (∨-E t u1 u2) = ∨-E (wkTm i t) (wkTm (keep i) u1) (wkTm (keep i) u2)
-wkTm i (◇-B t u)     = ◇-B (wkTm i t) (wkTm (keep i) u)
+wkTm i (◇-M t u)     = ◇-M (wkTm i t) (wkTm (keep i) u)

@@ -66,7 +66,7 @@ module Proof
   ⟦-⟧-sound {Γ} {c} (∨-E {.Γ} {a} {b} {.c} t u1 u2)
     = ≤-trans ⟨ ≤-refl , ⟦-⟧-sound t ⟩'
         (≤-trans (∧'-distr-∨'-forth ⟦ Γ ⟧c ⟦ a ⟧ ⟦ b ⟧) [ ⟦-⟧-sound u1 , ⟦-⟧-sound u2 ]')
-  ⟦-⟧-sound {Γ} {c} (◇-B t u)
+  ⟦-⟧-sound {Γ} {c} (◇-M t u)
     = ≤-trans ⟨ ≤-refl , ⟦-⟧-sound t ⟩' (≤-trans strong' (fmap' (⟦-⟧-sound u)))
 
 -- deductive soundness
