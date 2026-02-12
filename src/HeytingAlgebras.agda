@@ -9,13 +9,17 @@ private 1ℓ = suc 0ℓ
 HeytingAlgebra = LHeytingAlgebra 1ℓ 0ℓ 0ℓ
 module HeytingAlgebra = LHeytingAlgebra
 
-private
-  module LocalProperties (ℋ : HeytingAlgebra) where
+module HeytingAlgebraProperties (ℋ : HeytingAlgebra) where
 
-    open HeytingAlgebra ℋ
+  open HeytingAlgebra ℋ
 
-    x∧y≤y∧x : (x y : Carrier) → x ∧ y ≤ y ∧ x
-    x∧y≤y∧x x y = ∧-greatest (x∧y≤y x y) (x∧y≤x x y)
+  x∧y≤y∧x : (x y : Carrier) → x ∧ y ≤ y ∧ x
+  x∧y≤y∧x x y = ∧-greatest (x∧y≤y x y) (x∧y≤x x y)
+
+  ∧-assoc-forth : (x y z : Carrier) → (x ∧ y) ∧ z ≤ x ∧ (y ∧ z)
+  ∧-assoc-forth x y z = ∧-greatest
+    (trans (x∧y≤x (x ∧ y) z) (x∧y≤x x y))
+    (∧-greatest (trans (x∧y≤x (x ∧ y) z) (x∧y≤y x y)) (x∧y≤y (x ∧ y) z))
 
 ------------------
 -- Box algebras --
@@ -36,6 +40,12 @@ record CKBoxAlgebra : Set₂ where
     -- ◻ distributes over finite meets
     ◻-distrib-∧      : {x y : Carrier} → ◻ (x ∧ y) ≈ ◻ x ∧ ◻ y
     ◻-distrib-⊤-back : ⊤ ≤ ◻ ⊤
+
+  ◻-distrib-∧-forth : {x y : Carrier} → ◻ (x ∧ y) ≤ ◻ x ∧ ◻ y
+  ◻-distrib-∧-forth = ≤-respʳ-≈ ◻-distrib-∧ refl
+
+  ◻-distrib-∧-back : {x y : Carrier} → ◻ x ∧ ◻ y ≤ ◻ (x ∧ y)
+  ◻-distrib-∧-back = ≤-respˡ-≈ ◻-distrib-∧ refl
 
   ◻-distrib-⊤ : {x y : Carrier} → ◻ ⊤ ≈ ⊤
   ◻-distrib-⊤ = antisym (maximum _) ◻-distrib-⊤-back
@@ -97,7 +107,7 @@ record SLAlgebra : Set₂ where
       a∨b≈b     = antisym a∨b≤b b≤a∨b
       ◇⟨a∨b⟩≤◇b = ≤-respʳ-≈ (◇-resp-≈ a∨b≈b) refl
 
-  open LocalProperties ℋ
+  open HeytingAlgebraProperties ℋ using (x∧y≤y∧x)
 
   ◇x∧y≤◇⟨x∧y⟩ : (x y : Carrier) → ◇ x ∧ y ≤ ◇ (x ∧ y)
   ◇x∧y≤◇⟨x∧y⟩ x y = trans (x∧y≤y∧x (◇ x) y)

@@ -20,6 +20,13 @@ open import Instances.IPL.Semantics.Soundness
 open import Instances.IPL.Semantics.Completeness
 open import Instances.IPL.Semantics.NbE
 
+-- CKBox
+open import Instances.CKBox.System
+open import Instances.CKBox.Semantics.Interpretation
+open import Instances.CKBox.Semantics.Soundness
+--open import Instances.CKBox.Semantics.Completeness
+open import Instances.CKBox.Semantics.NbE
+
 -- PLL
 open import Instances.PLL.System
 open import Instances.PLL.Semantics.Interpretation
@@ -30,6 +37,3 @@ open import Instances.PLL.Semantics.NbE
 -- Lambda calculi with monads
 open import Instances.Maybe
 open import Instances.Err
-
--- Dual-context modal lambda calculi
-open import Instances.DK

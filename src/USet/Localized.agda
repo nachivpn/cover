@@ -15,10 +15,11 @@ module USet.Localized
 
 open NuclearFrame Nuc
 
-MNF = Nuc .NuclearFrame.refinement
-RNF = Nuc .NuclearFrame.reachability
-INF = Nuc .NuclearFrame.identity
-TNF = Nuc .NuclearFrame.transitivity
+private
+  MNF = Nuc .NuclearFrame.refinement
+  RNF = Nuc .NuclearFrame.reachability
+  INF = Nuc .NuclearFrame.identity
+  TNF = Nuc .NuclearFrame.transitivity
 
 open import Function using (id ; const ; _∘_ ; flip)
 open import Relation.Binary.PropositionalEquality
@@ -77,6 +78,9 @@ FromUSet : USet → LUSet
 FromUSet A = luset (𝒥' A) (𝒥'-join {A})
 
 open LUSet
+
+wk₊ : (X : LUSet) → w ⊆ w' → X .𝒳 ₀ w → X .𝒳 ₀ w'
+wk₊ X = wk (X .𝒳)
 
 --
 -- Entailment

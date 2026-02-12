@@ -35,6 +35,7 @@ open Monoidal MNF◻ UNF◻
   renaming
     ( 𝒞'-distrib-×'-back to ◻'-distrib-×'-back
     ; 𝒞'-distrib-⊤'-back to ◻'-distrib-⊤'-back
+    ; 𝒞'-pair to ◻'-pair
     )
   public
 

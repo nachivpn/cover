@@ -120,12 +120,12 @@ module ×'-distr (WCNF : WeaklyClosedUnderInt) where
     let (v1 , v2 , p1 , i1 , p2 , i2) = ⊗-bwd-reachable n1 n2 p
     in wk A i1 (f1 p1) , wk B i2 (f2 p2)
 
-  pr𝒞' : {G A B : USet} → G →̇ 𝒞' A → G →̇ 𝒞' B → G →̇ 𝒞' (A ×' B)
-  pr𝒞' {G} {A} {B} t u = 𝒞'-distrib-×'-back {A = A} {B = B} ∘' ⟨ t , u ⟩'
+  𝒞'-pair : {G A B : USet} → G →̇ 𝒞' A → G →̇ 𝒞' B → G →̇ 𝒞' (A ×' B)
+  𝒞'-pair {G} {A} {B} t u = 𝒞'-distrib-×'-back {A = A} {B = B} ∘' ⟨ t , u ⟩'
 
   letin' : {D G A B : USet} → (𝒞' D ×' G) →̇ 𝒞' A → (𝒞' (D ×' A) ×' G) →̇ B
     → (𝒞' D ×' G) →̇ B
-  letin' {D} {G} {A} {B} t u = u ∘' ⟨ pr𝒞' {A = D} {B = A} proj₁' t , proj₂' ⟩'
+  letin' {D} {G} {A} {B} t u = u ∘' ⟨ 𝒞'-pair {A = D} {B = A} proj₁' t , proj₂' ⟩'
 
 module ⊤'-distr (NENF : NonEmpty) where
   open NonEmpty NENF
