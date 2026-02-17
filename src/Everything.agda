@@ -2,13 +2,15 @@
 -- Algebras
 open import HeytingAlgebras
 
--- Upper set structures
+-- Upper-set structures
 open import USet.Base
 open import USet.Cover
 open import USet.Localized
+open import USet.Mon.CM.Cover
+open import USet.Box.CKBox.Cover
+open import USet.Lax.SL.Cover
 open import USet.Lax.PLL.Cover
 open import USet.Lax.PLL.Relational
-open import USet.Box.CKBox.Cover
 
 -- Boilerplate for systems
 open import Context
@@ -19,6 +21,13 @@ open import Instances.IPL.Semantics.Interpretation
 open import Instances.IPL.Semantics.Soundness
 open import Instances.IPL.Semantics.Completeness
 open import Instances.IPL.Semantics.NbE
+
+-- CM
+open import Instances.CM.System
+open import Instances.CM.Semantics.Interpretation
+open import Instances.CM.Semantics.Soundness
+open import Instances.CM.Semantics.Completeness
+open import Instances.CM.Semantics.NbE
 
 -- CKBox
 open import Instances.CKBox.System

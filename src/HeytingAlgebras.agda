@@ -143,6 +143,17 @@ record PLLAlgebra : Set₂ where
 -- IML Algebras --
 ------------------
 
+record CMAlgebra : Set₂ where
+  field
+    ℋ       : HeytingAlgebra
+
+  open HeytingAlgebra ℋ public
+
+  field
+    ⋆_          : Carrier → Carrier
+    ⋆-resp-≈    : {x y : Carrier} → x ≈ y → ⋆ x ≈ ⋆ y
+    ⋆-monotone  : {a b : Carrier} → a ≤ b → ⋆ a ≤ ⋆ b
+
 record CKAlgebra : Set₂ where
 
   field
@@ -192,18 +203,18 @@ record HasMonOp (ℋ : HeytingAlgebra) : Set₂ where
   open HeytingAlgebra ℋ public
 
   field
-    𝕞          : Carrier → Carrier
-    𝕞-resp-≈   : {x y : Carrier} → x ≈ y → 𝕞 x ≈ 𝕞 y
-    𝕞-monotone : {x y : Carrier} → x ≤ y → 𝕞 x ≤ 𝕞 y
+    ⋆          : Carrier → Carrier
+    ⋆-resp-≈   : {x y : Carrier} → x ≈ y → ⋆ x ≈ ⋆ y
+    ⋆-monotone : {x y : Carrier} → x ≤ y → ⋆ x ≤ ⋆ y
 
-  𝕞-distrib-∧-forth : {x y : Carrier} → 𝕞 (x ∧ y) ≤ 𝕞 x ∧ 𝕞 y
-  𝕞-distrib-∧-forth = ∧-greatest (𝕞-monotone (x∧y≤x _ _)) (𝕞-monotone (x∧y≤y _ _))
+  ⋆-distrib-∧-forth : {x y : Carrier} → ⋆ (x ∧ y) ≤ ⋆ x ∧ ⋆ y
+  ⋆-distrib-∧-forth = ∧-greatest (⋆-monotone (x∧y≤x _ _)) (⋆-monotone (x∧y≤y _ _))
 
-  𝕞-distrib-⊤-forth : 𝕞 ⊤ ≤ ⊤
-  𝕞-distrib-⊤-forth = maximum (𝕞 ⊤)
+  ⋆-distrib-⊤-forth : ⋆ ⊤ ≤ ⊤
+  ⋆-distrib-⊤-forth = maximum (⋆ ⊤)
 
-  𝕞-distrib-∨-back : {x y : Carrier} → 𝕞 x ∨ 𝕞 y ≤ 𝕞 (x ∨ y)
-  𝕞-distrib-∨-back = ∨-least (𝕞-monotone (x≤x∨y _ _)) (𝕞-monotone (y≤x∨y _ _))
+  ⋆-distrib-∨-back : {x y : Carrier} → ⋆ x ∨ ⋆ y ≤ ⋆ (x ∨ y)
+  ⋆-distrib-∨-back = ∨-least (⋆-monotone (x≤x∨y _ _)) (⋆-monotone (y≤x∨y _ _))
 
 -- Has a nucleus/nuclear operator
 record HasNucOp (ℋ : HeytingAlgebra) : Set₂ where
