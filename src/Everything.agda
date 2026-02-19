@@ -33,7 +33,7 @@ open import Instances.CM.Semantics.NbE
 open import Instances.CKBox.System
 open import Instances.CKBox.Semantics.Interpretation
 open import Instances.CKBox.Semantics.Soundness
---open import Instances.CKBox.Semantics.Completeness
+open import Instances.CKBox.Semantics.Completeness
 open import Instances.CKBox.Semantics.NbE
 
 -- SL
