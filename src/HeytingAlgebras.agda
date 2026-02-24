@@ -193,6 +193,72 @@ record CKAlgebra : Set₂ where
       ◻a∧◻b≤◻b : ◻ a ∧ ◻ b ≤ ◻ b
       ◻a∧◻b≤◻b = x∧y≤y (◻ a) (◻ b)
 
+record GCAlgebra : Set₂ where
+
+  field
+    ℋ : HeytingAlgebra
+
+  open HeytingAlgebra ℋ public
+
+  field
+    -- operators
+    ◻_          : Carrier → Carrier
+    ◻-resp-≈    : {x y : Carrier} → x ≈ y → ◻ x ≈ ◻ y
+    ◆_          : Carrier → Carrier
+    ◆-resp-≈    : {x y : Carrier} → x ≈ y → ◆ x ≈ ◆ y
+
+    -- ◻ distributes over finite meets
+    ◻-distrib-∧      : {x y : Carrier} → ◻ (x ∧ y) ≈ ◻ x ∧ ◻ y
+    ◻-distrib-⊤-back : ⊤ ≤ ◻ ⊤
+
+    -- ◆ distributes over finite joins
+    ◆-distrib-∨       : {x y : Carrier} → ◆ (x ∨ y) ≈ ◆ x ∨ ◆ y
+    ◆-distrib-⊥-forth : ◆ ⊥ ≤ ⊥
+
+    -- galois connection
+    x≤◻◆x : {x : Carrier} → x ≤ ◻ ◆ x
+    ◆◻x≤x : {x : Carrier} → ◆ ◻ x ≤ x
+
+  ◻-distrib-∧-forth : {x y : Carrier} → ◻ (x ∧ y) ≤ ◻ x ∧ ◻ y
+  ◻-distrib-∧-forth = ≤-respʳ-≈ ◻-distrib-∧ refl
+
+  ◻-distrib-∧-back : {x y : Carrier} → ◻ x ∧ ◻ y ≤ ◻ (x ∧ y)
+  ◻-distrib-∧-back = ≤-respˡ-≈ ◻-distrib-∧ refl
+
+  ◻-distrib-⊤ : {x y : Carrier} → ◻ ⊤ ≈ ⊤
+  ◻-distrib-⊤ = antisym (maximum _) ◻-distrib-⊤-back
+
+  ◻-monotone : {a b : Carrier} → a ≤ b → ◻ a ≤ ◻ b
+  ◻-monotone {a} {b} i = trans ◻a≤◻a∧◻b ◻a∧◻b≤◻b
+    where
+
+      ◻a≤◻a∧◻b : ◻ a ≤ ◻ a ∧ ◻ b
+      ◻a≤◻a∧◻b = ≤-respʳ-≈ ◻a∧◻b≈◻a refl
+        where
+          a≈a∧b    = antisym (∧-greatest refl i) (x∧y≤x _ _)
+          ◻a∧◻b≈◻a = Eq.trans (◻-resp-≈ a≈a∧b) ◻-distrib-∧
+
+      ◻a∧◻b≤◻b : ◻ a ∧ ◻ b ≤ ◻ b
+      ◻a∧◻b≤◻b = x∧y≤y (◻ a) (◻ b)
+
+  ◆-distrib-∨-forth : {x y : Carrier} → ◆ (x ∨ y) ≤ ◆ x ∨ ◆ y
+  ◆-distrib-∨-forth = ≤-respʳ-≈ ◆-distrib-∨ refl
+
+  ◆-distrib-∨-back : {x y : Carrier} → ◆ x ∨ ◆ y ≤ ◆ (x ∨ y)
+  ◆-distrib-∨-back = ≤-respˡ-≈ ◆-distrib-∨ refl
+
+  ◆-distrib-⊥ : {x y : Carrier} → ◆ ⊥ ≈ ⊥
+  ◆-distrib-⊥ = antisym ◆-distrib-⊥-forth (minimum _)
+
+  ◆-monotone : {a b : Carrier} → a ≤ b → ◆ a ≤ ◆ b
+  ◆-monotone {a} {b} i = trans ◆a≤◆⟨a∨b⟩ ◆⟨a∨b⟩≤◆b
+    where
+      a∨b≤b     = ∨-least i refl
+      b≤a∨b     = y≤x∨y a b
+      a∨b≈b     = antisym a∨b≤b b≤a∨b
+      ◆⟨a∨b⟩≤◆b = ≤-respʳ-≈ (◆-resp-≈ a∨b≈b) refl
+      ◆a≤◆⟨a∨b⟩ = trans (x≤x∨y (◆ a) (◆ b)) ◆-distrib-∨-back
+
 ------------------------------------
 -- Properties of Heyting Algebras --
 ------------------------------------
