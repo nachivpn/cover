@@ -1,9 +1,11 @@
+{-# OPTIONS --safe --without-K #-}
+
+module Instances.CM.Semantics.Soundness where
+
 open import HeytingAlgebras
 open import Instances.CM.System
 open import Instances.CM.Semantics.Entailment
 import Instances.CM.Semantics.Interpretation as Interpretation
-
-module Instances.CM.Semantics.Soundness where
 
 module Proof
   (𝒜 : CMAlgebra)
@@ -69,5 +71,5 @@ module Proof
     = ≤-trans (⟦-⟧-sound t) (fmap' (≤-trans ⟨ unit' _ , ≤-refl ⟩' (⟦-⟧-sound u)))
 
 -- deductive soundness
-soundness : Γ ⊢ a → Γ ⊨ a
+soundness : Γ ⊢ a → Γ ⊨ₐ a
 soundness t 𝒜 V𝕓 = let open Proof 𝒜 V𝕓 in ⟦-⟧-sound t

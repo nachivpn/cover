@@ -55,7 +55,7 @@ data _⨾_⊢_ (Δ Γ : Ctx) : Form → Set where
 -- Meta-properties
 --
 
-wkTm : Δ ⊆ Δ' → Γ ⊆ Γ' → Δ ⨾ Γ ⊢ a → Δ' ⨾ Γ' ⊢ a
+wkTm : Δ ⊑ Δ' → Γ ⊑ Γ' → Δ ⨾ Γ ⊢ a → Δ' ⨾ Γ' ⊢ a
 wkTm i1 i2 (hyp x)       = hyp (wkVar i2 x)
 wkTm i1 i2 ⊤-I           = ⊤-I
 wkTm i1 i2 (⊥-E t)       = ⊥-E (wkTm i1 i2 t)
@@ -80,25 +80,25 @@ Ctx₂ = Ctx × Ctx
 variable
   Χ Χ' Χ'' Χ''' : Ctx₂
 
-_⊆₂_ : Ctx × Ctx → Ctx × Ctx → Set
-(Δ , Γ) ⊆₂ (Δ' , Γ') = Δ ⊆ Δ' × Γ ⊆ Γ'
+_⊑₂_ : Ctx × Ctx → Ctx × Ctx → Set
+(Δ , Γ) ⊑₂ (Δ' , Γ') = Δ ⊑ Δ' × Γ ⊑ Γ'
 
-⊆₂-trans : Χ ⊆₂ Χ' → Χ' ⊆₂ Χ'' → Χ ⊆₂ Χ''
-⊆₂-trans (i1 , i2) (i1' , i2') = ⊆-trans i1 i1' , ⊆-trans i2 i2'
+⊑₂-trans : Χ ⊑₂ Χ' → Χ' ⊑₂ Χ'' → Χ ⊑₂ Χ''
+⊑₂-trans (i1 , i2) (i1' , i2') = ⊑-trans i1 i1' , ⊑-trans i2 i2'
 
-⊆₂-refl : Χ ⊆₂ Χ
-⊆₂-refl = ⊆-refl , ⊆-refl
+⊑₂-refl : Χ ⊑₂ Χ
+⊑₂-refl = ⊑-refl , ⊑-refl
 
-freshWkL₂ : (Δ , Γ) ⊆₂ ((Δ `, a), Γ)
-freshWkL₂ = freshWk , ⊆-refl
+freshWkL₂ : (Δ , Γ) ⊑₂ ((Δ `, a), Γ)
+freshWkL₂ = freshWk , ⊑-refl
 
-freshWkR₂ : (Δ , Γ) ⊆₂ (Δ , (Γ `, a))
-freshWkR₂ = ⊆-refl , freshWk
+freshWkR₂ : (Δ , Γ) ⊑₂ (Δ , (Γ `, a))
+freshWkR₂ = ⊑-refl , freshWk
 
 open import Frame.IFrame
 
-𝕎₂ : Preorder Ctx₂ _⊆₂_
+𝕎₂ : Preorder Ctx₂ _⊑₂_
 𝕎₂ = record
-      { ⊆-trans = ⊆₂-trans
-      ; ⊆-refl  = ⊆₂-refl
+      { ⊑-trans = ⊑₂-trans
+      ; ⊑-refl  = ⊑₂-refl
       }

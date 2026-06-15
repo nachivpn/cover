@@ -5,7 +5,7 @@ private
   variable
     a b c d : Ty
 
-infix  5 _⊆_
+infix  5 _⊑_
 infixl 5 _,,_
 
 -----------
@@ -35,41 +35,41 @@ _,,_ : Ctx → Ctx → Ctx
 -------------
 
 -- weakening relation
-data _⊆_  : Ctx → Ctx → Set where
-  base   : [] ⊆ []
-  drop   : (w : Γ ⊆ Δ) → Γ ⊆ Δ `, a
-  keep   : (w : Γ ⊆ Δ) → Γ `, a ⊆ Δ `, a
+data _⊑_  : Ctx → Ctx → Set where
+  base   : [] ⊑ []
+  drop   : (w : Γ ⊑ Δ) → Γ ⊑ Δ `, a
+  keep   : (w : Γ ⊑ Δ) → Γ `, a ⊑ Δ `, a
 
 pattern drop[_] a w = drop {a = a} w
 pattern keep[_] a w = keep {a = a} w
 
 variable
-  w w' w'' : Γ ⊆ Γ'
+  w w' w'' : Γ ⊑ Γ'
 
-⊆-refl[_] : (Γ : Ctx) → Γ ⊆ Γ
-⊆-refl[_] []        = base
-⊆-refl[_] (Γ `, _a) = keep  ⊆-refl[ Γ ]
+⊑-refl[_] : (Γ : Ctx) → Γ ⊑ Γ
+⊑-refl[_] []        = base
+⊑-refl[_] (Γ `, _a) = keep  ⊑-refl[ Γ ]
 
-⊆-refl : Γ ⊆ Γ
-⊆-refl {Γ} = ⊆-refl[ Γ ]
+⊑-refl : Γ ⊑ Γ
+⊑-refl {Γ} = ⊑-refl[ Γ ]
 
-freshWk[_,_] : (Γ : Ctx) → (a : Ty) → Γ ⊆ (Γ `, a)
-freshWk[ Γ , a ] = drop ⊆-refl
+freshWk[_,_] : (Γ : Ctx) → (a : Ty) → Γ ⊑ (Γ `, a)
+freshWk[ Γ , a ] = drop ⊑-refl
 
-freshWk : Γ ⊆ (Γ `, a)
+freshWk : Γ ⊑ (Γ `, a)
 freshWk = freshWk[ _ , _ ]
 
-_∙_ : Θ ⊆ Δ → Δ ⊆ Γ → Θ ⊆ Γ
+_∙_ : Θ ⊑ Δ → Δ ⊑ Γ → Θ ⊑ Γ
 w       ∙ base     = w
 w       ∙ drop  w' = drop  (w ∙ w')
 drop  w ∙ keep  w' = drop  (w ∙ w')
 keep  w ∙ keep  w' = keep  (w ∙ w')
 
-⊆-trans = _∙_
+⊑-trans = _∙_
 
-⊆-init[_] : (Γ : Ctx) → [] ⊆ Γ
-⊆-init[ [] ]     = base
-⊆-init[ Γ `, a ] = drop ⊆-init[ Γ ]
+⊑-init[_] : (Γ : Ctx) → [] ⊑ Γ
+⊑-init[ [] ]     = base
+⊑-init[ Γ `, a ] = drop ⊑-init[ Γ ]
 
 ------------
 -- Variables
@@ -83,7 +83,7 @@ pattern v0 = zero
 pattern v1 = succ v0
 pattern v2 = succ v1
 
-wkVar : Γ ⊆ Γ' → Var Γ a → Var Γ' a
+wkVar : Γ ⊑ Γ' → Var Γ a → Var Γ' a
 wkVar (drop e) v        = succ (wkVar e v)
 wkVar (keep e) zero     = zero
 wkVar (keep e) (succ v) = succ (wkVar e v)

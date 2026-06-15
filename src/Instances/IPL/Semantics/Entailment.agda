@@ -1,4 +1,4 @@
-{-# OPTIONS --safe #-}
+{-# OPTIONS --safe --without-K #-}
 
 open import HeytingAlgebras
 
@@ -8,10 +8,10 @@ import Instances.IPL.Semantics.Interpretation as Interpretation
 module Instances.IPL.Semantics.Entailment
   where
 
--- Entailment in a model
-_⨾_⊨_ : HeytingAlgebra → Ctx → Form → Set₁
-ℋ ⨾ Γ ⊨ a = ∀ V𝕡 → let open Interpretation ℋ V𝕡 in ⟦ Γ ⟧c ≤ ⟦ a ⟧
+-- Entailment in an algebraic model
+_⨾_⊨ₐ_ : HeytingAlgebra → Ctx → Form → Set₁
+ℋ ⨾ Γ ⊨ₐ a = ∀ V𝕡 → let open Interpretation ℋ V𝕡 in ⟦ Γ ⟧c ≤ ⟦ a ⟧
 
--- Entailment
-_⊨_ : Ctx → Form → Set₂
-Γ ⊨ a = ∀ ℋ → ℋ ⨾ Γ ⊨ a
+-- Entailment in all algebraic models
+_⊨ₐ_ : Ctx → Form → Set₂
+Γ ⊨ₐ a = ∀ ℋ → ℋ ⨾ Γ ⊨ₐ a

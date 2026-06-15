@@ -1,18 +1,16 @@
-{-# OPTIONS --safe #-}
+{-# OPTIONS --safe --without-K #-}
 
 module Instances.Maybe where
 
+open import Function using (_∘_)
+
+open import Data.Sum
 open import Data.Product
   using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂)
-
 open import Relation.Binary.PropositionalEquality using (_≡_)
-  renaming (refl to ≡-refl ; sym to ≡-sym ; trans to ≡-trans
-  ; cong to ≡-cong ; cong₂ to ≡-cong₂ ; subst to ≡-subst)
-
-open import PUtil
-
-open import Function
-open import Data.Sum
+  renaming ( refl to ≡-refl ; sym to ≡-sym ; trans to ≡-trans
+           ; cong to ≡-cong ; cong₂ to ≡-cong₂ ; subst to ≡-subst
+           )
 
 data Ty : Set where
   𝕓   : Ty
@@ -24,6 +22,8 @@ private
     a b c d : Ty
 
 open import Context Ty
+open import Neighborhood.Systems 𝕎
+open import USet.Base 𝕎
 
 --
 -- Syntax
@@ -51,8 +51,8 @@ data Nf where
   nothing : Nf Γ (𝕞 a)
   letin   : Ne Γ (𝕞 a) → Nf (Γ `, a) b → Nf Γ b
 
-wkNe : Γ ⊆ Γ' → Ne Γ a → Ne Γ' a
-wkNf : Γ ⊆ Γ' → Nf Γ a → Nf Γ' a
+wkNe : Γ ⊑ Γ' → Ne Γ a → Ne Γ' a
+wkNf : Γ ⊑ Γ' → Nf Γ a → Nf Γ' a
 
 wkNe i (var x)   = var (wkVar i x)
 wkNe i (app n x) = app (wkNe i n) (wkNf i x)
@@ -63,9 +63,9 @@ wkNf i (just n)    = just (wkNf i n)
 wkNf i nothing     = nothing
 wkNf i (letin n m) = letin (wkNe i n) (wkNf (keep i) m)
 
---
--- Semantics
---
+------------------
+-- Cover system --
+------------------
 
 -- the concrete residualising monad (for illustration only)
 data Maybe (A : Ctx → Set) : Ctx → Set where
@@ -83,64 +83,76 @@ data _∈_ (Δ : Ctx) : K Γ → Set where
   here  : Δ ∈ single Δ
   there : {n : Ne Γ (𝕞 a)} {k : K (Γ `, a)} → Δ ∈ k → Δ ∈ cons n k
 
-open import Frame.NFrame 𝕎 K _∈_
+open import Neighborhood.Lib 𝕎 K _∈_
 
-wkK : Γ ⊆ Γ' → K Γ → K Γ'
+wkK : Γ ⊑ Γ' → K Γ → K Γ'
 wkK i (single _) = single _
 wkK i nil        = nil
 wkK i (cons n k) = cons (wkNe i n) (wkK (keep i) k)
 
-wkK-refines : (i : Γ ⊆ Γ') (k : K Γ) → k ≼ wkK i k
-wkK-refines i (single _)   here
+wkK-ref : (i : Γ ⊑ Γ') (k : K Γ) → ∣ k ∣ ≼ ∣ wkK i k ∣
+wkK-ref i (single _)   here
   = _ , here , i
-wkK-refines i nil          ()
-wkK-refines i (cons n k)   (there p)
-  = let (Δ , p' , i') = wkK-refines (keep i) k p in
+wkK-ref i nil          ()
+wkK-ref i (cons n k)   (there p)
+  = let (Δ , p' , i') = wkK-ref (keep i) k p in
      (Δ , there p' , i')
 
-NF : Refinement
-NF = record { wkN = wkK ; wkN-refines = wkK-refines }
+K-ref : {Γ : Ctx} (k : K Γ) → ∣ k ∣ ⊆ (↑ Γ)
+K-ref (single _) here      = ⊑-refl
+K-ref (cons x k) (there p) = ⊑-trans freshWk (K-ref k p)
 
-open Reachability
+idK = single
 
-RNF : Reachability
-RNF .reachable (single Γ) here      = ⊆-refl
-RNF .reachable (cons n k) (there x) = freshWk ∙ RNF .reachable k x
-
-INF : Identity
-INF = record
-  { idN[_]         = single
-  ; idN-bwd-member = λ { here → ≡-refl }
-  }
-
-WINF = Identity.weakIdentity INF
+idK-sub : {Γ : Ctx} → ∣ idK Γ ∣ ⊆ ⟨ Γ ⟩
+idK-sub here = ≡-refl
 
 transK : (k : K Γ) → ForAllW k K → K Γ
 transK (single _) h = h here
 transK nil        h = nil
 transK (cons x k) h = cons x (transK k (h ∘ there))
 
-transK-bwd-member : (k : K Γ) (h : ForAllW k K) → ForAllW (transK k h) (λ Δ → Exists∈ k (λ Γ∈k → Δ ∈ h Γ∈k))
-transK-bwd-member (single _) h p
-  = _ , here , p
-transK-bwd-member (cons x k) h (there p)
-  = let (Δ , Γ∈k , Δ∈h-) = transK-bwd-member k (h ∘ there) p
-    in _ , there Γ∈k , Δ∈h-
+transK-sub : (k : K Γ) (h : ForAllW k K)
+  → ∣ transK k h ∣ ⊆ ⨆ ∣ k ∣ (∣_∣ ∘ h)
+transK-sub (single _) h p
+  = (_ , here) , p
+transK-sub (cons x k) h (there p)
+  = let (Δ , Γ∈k) , Δ∈h- = transK-sub k (h ∘ there) p
+    in (_ , there Γ∈k) , Δ∈h-
 
-TNF : Transitivity
-TNF = record
-  { transN            = transK
-  ; transN-bwd-member = transK-bwd-member
+emptyK[_] : (Γ : Ctx) → K Γ
+emptyK[_] Γ = nil
+
+emptyK-sub : {Γ : Ctx} → ∣ emptyK[ Γ ] ∣ ⊆ ∅
+emptyK-sub ()
+
+NS : NeighborhoodSystem
+NS = record
+  { N          = K
+  ; _∈_        = _∈_
+  ; refinement = record { wkN = wkK ; wkN-ref = wkK-ref }
   }
 
-WTNF = Transitivity.weakTransitivity TNF
-
-ENF : Empty
-ENF = record { emptyN[_] = λ _ → nil ; emptyN-bwd-absurd = λ { () } }
-
 -- imports USet, 𝒞' (the derived cover monad), etc.
-open import USet.Base 𝕎
-open import USet.Cover 𝕎 K _∈_ NF renaming (𝒞' to Maybe')
+open import USet.Cover 𝕎 NS renaming (𝒞' to Maybe')
+
+CS : CoverSystem NS
+CS = record
+  { inclusion    = record { N-ref = K-ref }
+  ; identity     = record { idN[_] = idK ; idN-sub = idK-sub }
+  ; transitivity = record { transN = transK ; transN-sub = transK-sub }
+  }
+
+WCS = CoverSystem.weakCoverSystem CS
+
+open StrongMonad WCS renaming (return' to just')
+
+ES : EmptySeriality
+ES = record { emptyN[_] = emptyK[_] ; emptyN-sub = emptyK-sub }
+
+--------------------
+-- Interpretation --
+--------------------
 
 Nf' : Ty → USet
 Nf' a = uset (λ Γ → Nf Γ a) wkNf
@@ -160,18 +172,12 @@ emb' .apply = emb
 ⟦ [] ⟧c     = ⊤'
 ⟦ Γ `, a ⟧c = ⟦ Γ ⟧c ×' ⟦ a ⟧
 
---
--- Evaluation
---
-
 nothing' : {G A : USet} → G →̇ Maybe' A
-nothing' {G} {A} = Nothing.nothing' ENF {A = A}
+nothing' {G} {A} = Nothing.nothing' ES {A = A}
 
-just' : {G A : USet} → G →̇ A → G →̇ Maybe' A
-just' = Return.return' WINF
-
-letin' : {G A B : USet} → (G →̇ Maybe' A) → ((G ×' A) →̇ Maybe' B) → (G →̇ Maybe' B)
-letin' {G} {A} {B} = StrongJoin.letin' RNF WTNF {G} {A} {B}
+----------------
+-- Evaluation --
+----------------
 
 evalVar : Var Γ a →  ⟦ Γ ⟧c →̇ ⟦ a ⟧
 evalVar zero     = proj₂'
@@ -185,9 +191,9 @@ eval (nothing {a = a})   = nothing' {A = ⟦ a ⟧}
 eval (just t)            = just' (eval t)
 eval (letin {b = b} t u) = letin' {B = ⟦ b ⟧} (eval t) (eval u)
 
---
--- Residualisation
---
+---------------------
+-- Residualisation --
+---------------------
 
 collect : Maybe' (Nf' a) →̇ Nf' (𝕞 a)
 collect {a} = run𝒞' {Nf' a} collectAux
@@ -211,9 +217,9 @@ reflect 𝕓       = emb'
 reflect (a ⇒ b) = fun λ n i x → reflect b .apply (app (wkNe i n) (reify a .apply x))
 reflect (𝕞 a)   = map𝒞' (reflect a) ∘' register
 
---
--- NbE
---
+---------
+-- NbE --
+---------
 
 idEnv : ∀ Γ → ⟦ Γ ⟧c ₀ Γ
 idEnv []       = _
@@ -224,3 +230,4 @@ quot {Γ} {a} f = reify a .apply (f .apply (idEnv Γ))
 
 norm : Tm Γ a → Nf Γ a
 norm = quot ∘ eval
+

@@ -1,25 +1,18 @@
 {-# OPTIONS --safe --without-K #-}
 
 open import Frame.IFrame
-import Frame.NFrame as NF
+import Neighborhood.Systems as Sys
 
 module USet.Localized
-  {W    : Set}
-  {_⊆_  : (w w' : W) → Set}
-  (𝕎   : Preorder W _⊆_)
-  (N   : W → Set)
-  (_∈_ : (v : W) {w : W} → N w → Set)
-  (let open NF 𝕎 N _∈_)
-  (Nuc  : {-NF.-} NuclearFrame)
+  {W : Set} {_⊑_ : W → W → Set}
+  (𝕎 : Preorder W _⊑_)
+  (let open Sys 𝕎)
+  {NS : NeighborhoodSystem}
+  (let open NeighborhoodSystem NS)
+  (CS : WeakCoverSystem NS)
   where
 
-open NuclearFrame Nuc
-
-private
-  MNF = Nuc .NuclearFrame.refinement
-  RNF = Nuc .NuclearFrame.reachability
-  INF = Nuc .NuclearFrame.identity
-  TNF = Nuc .NuclearFrame.transitivity
+open WeakCoverSystem CS
 
 open import Function using (id ; const ; _∘_ ; flip)
 open import Relation.Binary.PropositionalEquality
@@ -40,7 +33,7 @@ open import Relation.Binary.Structures using (IsPreorder ; IsEquivalence)
 open import Level using (0ℓ ; suc) ; private 1ℓ = suc 0ℓ
 
 open import USet.Base 𝕎
-open import USet.Cover 𝕎 N _∈_ MNF renaming
+open import USet.Cover 𝕎 NS renaming
   ( 𝒞' to 𝒥'
   ; map𝒞' to map𝒥'
   ; run𝒞' to run𝒥'
@@ -50,10 +43,7 @@ private
   variable
     w w' w'' u u' v v' : W
 
-WINF = Identity.weakIdentity INF
-WTNF = Transitivity.weakTransitivity TNF
-
-open StrongMonad RNF WINF WTNF
+open StrongMonad CS
   renaming ( point' to 𝒥'-point
            ; join' to 𝒥'-join
            )
@@ -79,7 +69,7 @@ FromUSet A = luset (𝒥' A) (𝒥'-join {A})
 
 open LUSet
 
-wk₊ : (X : LUSet) → w ⊆ w' → X .𝒳 ₀ w → X .𝒳 ₀ w'
+wk₊ : (X : LUSet) → w ⊑ w' → X .𝒳 ₀ w → X .𝒳 ₀ w'
 wk₊ X = wk (X .𝒳)
 
 --

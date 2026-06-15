@@ -1,9 +1,12 @@
+{-# OPTIONS --safe --without-K #-}
+
+module Instances.PLL.Semantics.Soundness where
+
 open import HeytingAlgebras
+
 open import Instances.PLL.System
 open import Instances.PLL.Semantics.Entailment
 import Instances.PLL.Semantics.Interpretation as Interpretation
-
-module Instances.PLL.Semantics.Soundness where
 
 module Proof
   (𝒜 : PLLAlgebra)

@@ -1,52 +1,51 @@
 {-# OPTIONS --safe --without-K #-}
 
 open import Frame.IFrame
-import Frame.NFrame as NF
+import Neighborhood.Systems as Sys
 import USet.Localized as USetLoc
 
 open import Data.Product
   using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂ ; curry ; uncurry)
 
 module USet.Lax.PLL.Relational
-  {W     : Set}
-  {_⊆_   : (w w' : W) → Set}
-  {R     : (w v : W) → Set}
-  (𝕎i    : Preorder W _⊆_)
+  {W : Set} {_⊑_ : W → W → Set}
+  (𝕎i : Preorder W _⊑_)
+  (let open Sys 𝕎i)
   -- For the lax modality
+  {R     : (w v : W) → Set}
   (𝕎m    : Preorder W R)
-  (R-incl : {w v : W} → R w v → w ⊆ v)
-  (R-confluence : {w w' v : W} → w ⊆ w' → R w v → ∃ λ v' → R w' v' × (v ⊆ v'))
+  (R-incl : {w v : W} → R w v → w ⊑ v)
+  (R-confluence : {w w' v : W} → w ⊑ w' → R w v → ∃ λ v' → R w' v' × (v ⊑ v'))
   where
 
 open Preorder 𝕎m renaming
-  ( ⊆-refl to R-refl
-  ; ⊆-refl[_] to R-refl[_]
-  ; ⊆-trans to R-trans
+  ( ⊑-refl to R-refl
+  ; ⊑-refl[_] to R-refl[_]
+  ; ⊑-trans to R-trans
   )
 open import USet.Base 𝕎i
-
+  
 private
   variable
     w w' w'' u u' v v' : W
 
 infix 21 ⟨R⟩'_
 
--- Lax modality
+-- Relational lax modality
 ⟨R⟩'_ : USet → USet
 ⟨R⟩' A = uset (λ w → ∃ λ v → R w v × A ₀ v) wkR
   where
-  wkR : w ⊆ w' → ∃ (λ v → R w v × (A ₀ v)) → ∃ (λ v' → R w' v' × (A ₀ v'))
+  wkR : w ⊑ w' → ∃ (λ v → R w v × (A ₀ v)) → ∃ (λ v' → R w' v' × (A ₀ v'))
   wkR i (v , r , x) = let (v' , r' , i') = R-confluence i r in v' , r' , (wk A i' x)
 
 ⟨R⟩'-map : {A B : USet} → (f : A →̇ B) → ⟨R⟩' A →̇ ⟨R⟩' B
 ⟨R⟩'-map f .apply (v , r , x) = v , r , f .apply x
 
 module LocalizedRelational
-  (N   : W → Set)
-  (_∈_ : (v : W) {w : W} → N w → Set)
-  (let open NF 𝕎i N _∈_)
-  (Nuc  : NuclearFrame)
-  (let open USetLoc 𝕎i N _∈_ Nuc)
+  {NS₊ : NeighborhoodSystem}
+  (CS₊ : WeakCoverSystem NS₊)
+  (let open NeighborhoodSystem NS₊ renaming (N to N₊ ; _∈_ to _∈₊_ ; refinement to refinement₊))
+  (let open USetLoc 𝕎i CS₊)
   (R-localize[_] : (A : USet) → 𝒥' (⟨R⟩' A) →̇ (⟨R⟩' 𝒥' A))
   where
 
@@ -68,37 +67,49 @@ module RelationalCover
   _∈◇_  : (v : W) {w : W} → N◇ w → Set
   v ∈◇ (u , _) = u ≡ v
 
-  MNF : NF.Refinement 𝕎i N◇ _∈◇_
-  MNF = record
+  open import Neighborhood.Lib 𝕎i N◇ _∈◇_ renaming
+    ( Refinement to Refinement◇
+    ; Inclusion to Inclusion◇
+    ; Identity to Identity◇
+    ; Transitivity to Transitivity◇
+    )
+
+  refinement◇ : Refinement◇ 
+  refinement◇ = record
     { wkN = λ i (v , r) →
       let (v' , r' , _) = R-confluence i r
       in v' , r'
-    ; wkN-refines = λ { i (v , r) p →
+    ; wkN-ref = λ { i (v , r) p →
       let (v' , r' , i') = R-confluence i r
-      in v , ≡-refl , ≡-subst (v ⊆_) p i' }
+      in v , ≡-refl , ≡-subst (v ⊑_) p i' }
     }
 
-  RNF : NF.Reachability 𝕎i N◇ _∈◇_
-  RNF = record { reachable = λ (u , r) p → ≡-subst (_ ⊆_) p (R-incl r) }
+  inclusion◇ : Inclusion◇ 
+  inclusion◇ = record { N-ref = λ (u , r) p → ≡-subst (_ ⊑_) p (R-incl r) }
+  
+  identity◇ : Identity◇
+  identity◇ = record { idN[_] = λ w → w , R-refl[ w ] ; idN-sub = λ p → p }
 
-  INF : NF.Identity 𝕎i N◇ _∈◇_
-  INF = record { idN[_] = λ w → w , R-refl[ w ] ; idN-bwd-member = λ p → p }
-
-  TNF : NF.Transitivity 𝕎i N◇ _∈◇_
-  TNF = record
-    { transN            = λ {w} (u , r) h → let (v , r') = h ≡-refl in v , R-trans r r'
-    ; transN-bwd-member = λ {w} (u , r) h p → let (v , r') = h ≡-refl in u , ≡-refl , p
+  transitivity◇ : Transitivity◇
+  transitivity◇ = record
+    { transN     = λ {w} (u , r) h → let (v , r') = h ≡-refl in v , R-trans r r'
+    ; transN-sub = λ {w} (u , r) h p → let (v , r') = h ≡-refl in (u , ≡-refl) , p
     }
 
-  Nuc◇ : NF.NuclearFrame 𝕎i N◇ _∈◇_
-  Nuc◇ = record
-    { refinement   = MNF
-    ; reachability = RNF
-    ; identity     = INF
-    ; transitivity = TNF
+  NS◇ : NeighborhoodSystem
+  NS◇ = record { N = N◇ ; _∈_ = _∈◇_ ; refinement = refinement◇ }
+  
+  CS◇ : CoverSystem NS◇
+  CS◇ = record
+    { inclusion    = inclusion◇
+    ; identity     = identity◇
+    ; transitivity = transitivity◇
     }
 
-  open import USet.Lax.PLL.Cover 𝕎i Nuc◇ public
+  PLLS◇ : PLLModalSystem NS◇
+  PLLS◇ = CoverSystem.weakCoverSystem CS◇
+
+  open import USet.Lax.PLL.Cover 𝕎i PLLS◇ public
 
   ◇'-to-⟨R⟩' : {A : USet} → ◇' A →̇ ⟨R⟩' A
   ◇'-to-⟨R⟩' .apply ((v , r) , f) = v , r , f ≡-refl
@@ -107,10 +118,10 @@ module RelationalCover
   ⟨R⟩'-to-◇' {A} .apply (v , r , x) = (v , r) , λ p → ≡-subst (A ₀_) p x
 
   module LocalizedRelationalCover
-    (N₊   : W → Set)
-    (_∈₊_ : (v : W) {w : W} → N₊ w → Set)
-    (Nuc₊ : NF.NuclearFrame 𝕎i N₊ _∈₊_)
-    (let open USetLoc 𝕎i N₊ _∈₊_ Nuc₊)
+    {NS₊ : NeighborhoodSystem}
+    (CS₊ : WeakCoverSystem NS₊)
+    (let open NeighborhoodSystem NS₊ renaming (N to N₊ ; _∈_ to _∈₊_ ; refinement to refinement₊))
+    (let open USetLoc 𝕎i CS₊)
     (R-localize[_] : (A : USet) → 𝒥' (⟨R⟩' A) →̇ (⟨R⟩' 𝒥' A))
     where
 
@@ -119,9 +130,9 @@ module RelationalCover
       ∘' (R-localize[ A ]
       ∘' map𝒥' (◇'-to-⟨R⟩' {A}))
 
-    open LocalizedCover Nuc₊ (λ {A} → ◇'-localize[ A ]) public
+    open LocalizedCover CS₊ (λ {A} → ◇'-localize[ A ]) public
 
-    open LocalizedRelational N₊ _∈₊_ Nuc₊ R-localize[_]
+    open LocalizedRelational CS₊ R-localize[_]
 
     ◇₊-to-⟨R⟩₊ : {A : LUSet} → (◇₊ A) →̇₊ (⟨R⟩₊ A)
     ◇₊-to-⟨R⟩₊ {luset A _} = ◇'-to-⟨R⟩' {A}

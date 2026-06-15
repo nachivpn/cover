@@ -1,4 +1,4 @@
-{-# OPTIONS --safe #-}
+{-# OPTIONS --safe --without-K #-}
 
 module Instances.IPL.System where
 
@@ -45,7 +45,7 @@ data _⊢_ : Ctx → Form → Set where
   ∨-I2  : Γ ⊢ b → Γ ⊢ (a ∨ b)
   ∨-E   : Γ ⊢ (a ∨ b) → (Γ `, a) ⊢ c → (Γ `, b) ⊢ c → Γ ⊢ c
 
-wkTm : Γ ⊆ Γ' → Γ ⊢ a → Γ' ⊢ a
+wkTm : Γ ⊑ Γ' → Γ ⊢ a → Γ' ⊢ a
 wkTm i (hyp x)       = hyp (wkVar i x)
 wkTm i ⊤-I           =  ⊤-I
 wkTm i (⊥-E t)       = ⊥-E (wkTm i t)

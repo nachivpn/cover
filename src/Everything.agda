@@ -1,3 +1,4 @@
+{-# OPTIONS --safe --without-K #-}
 
 -- Algebras
 open import HeytingAlgebras
@@ -12,7 +13,7 @@ open import USet.Lax.SL.Cover
 open import USet.Lax.PLL.Cover
 open import USet.Lax.PLL.Relational
 
--- Boilerplate for systems
+-- Boilerplate for proof systems/calculi
 open import Context
 
 -- IPL

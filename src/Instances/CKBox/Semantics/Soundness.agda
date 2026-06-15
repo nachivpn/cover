@@ -1,10 +1,13 @@
+{-# OPTIONS --safe --without-K #-}
+
+module Instances.CKBox.Semantics.Soundness where
+
 open import HeytingAlgebras
 open import Instances.CKBox.System
 open import Instances.CKBox.Semantics.Entailment
 import Instances.CKBox.Semantics.Interpretation as Interpretation
 open import Data.Product using (_×_ ; _,_)
 
-module Instances.CKBox.Semantics.Soundness where
 
 module Proof
   (𝒜 : CKBoxAlgebra)
@@ -86,5 +89,5 @@ module Proof
         (⟦-⟧-sound u)
 
 -- deductive soundness
-soundness : Δ ⨾ Γ ⊢ a → Δ ⨾ Γ ⊨ a
+soundness : Δ ⨾ Γ ⊢ a → Δ ⨾ Γ ⊨ₐ a
 soundness t 𝒜 V𝕓 = let open Proof 𝒜 V𝕓 in ⟦-⟧-sound t

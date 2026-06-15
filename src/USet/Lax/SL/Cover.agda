@@ -1,28 +1,26 @@
 {-# OPTIONS --safe --without-K #-}
 
 open import Frame.IFrame
-import Frame.NFrame as NF
+import Neighborhood.Systems as Sys
 import USet.Localized as USetLoc
 
 open import Data.Product
   using (Σ; ∃; _×_; _,_; -,_ ; proj₁ ; proj₂ ; curry ; uncurry)
 
 module USet.Lax.SL.Cover
-  {W     : Set}
-  {_⊆_   : (w w' : W) → Set}
-  (𝕎    : Preorder W _⊆_)
-  {N◇    : W → Set}
-  {_∈◇_  : (v : W) {w : W} → N◇ w → Set}
-  (Str◇  : NF.StrongFrame 𝕎 N◇ _∈◇_)
+  {W : Set} {_⊆_ : W → W → Set}
+  (𝕎 : Preorder W _⊆_)
+  (let open Sys 𝕎)
+  {NS◇  : NeighborhoodSystem}
+  (SLS◇ : SLModalSystem NS◇)
   where
-
+  
 open import USet.Base 𝕎
-
-private
-  MNF◇  = Str◇ .NF.StrongFrame.refinement
-  RNF◇  = Str◇ .NF.StrongFrame.reachability
-
-open import USet.Cover 𝕎 N◇ _∈◇_ MNF◇
+open NeighborhoodSystem NS◇ renaming
+  (N to N◇ ; _∈_ to _∈◇_ ; refinement to refinement◇)
+open SLModalSystem SLS◇ renaming
+  (inclusion to inclusion◇)
+open import USet.Cover 𝕎 NS◇
   renaming
     (𝒞' to ◇'
     ; map𝒞' to ◇'-map
@@ -30,16 +28,16 @@ open import USet.Cover 𝕎 N◇ _∈◇_ MNF◇
     ; 𝒞'-distrib-×'-forth to ◇'-distrib-×'-forth
     )
   public
-
-open Strength RNF◇
+  
+open Strength inclusion◇
   renaming (strength' to ◇'-strength)
   public
 
 module LocalizedCover
-  {N₊   : W → Set}
-  {_∈₊_ : (v : W) {w : W} → N₊ w → Set}
-  (Nuc₊ : NF.NuclearFrame 𝕎 N₊ _∈₊_)
-  (let open USetLoc 𝕎 N₊ _∈₊_ Nuc₊)
+  {NS₊ : NeighborhoodSystem}
+  (CS₊ : WeakCoverSystem NS₊)
+  (let open NeighborhoodSystem NS₊ renaming (N to N₊ ; _∈_ to _∈₊_ ; refinement to refinement₊))
+  (let open USetLoc 𝕎 CS₊)
   (◇'-localize : {A : USet} → 𝒥' (◇' A) →̇ ◇' (𝒥' A))
   where
 
@@ -53,8 +51,7 @@ module LocalizedCover
 
   ◇₊-strength : {X Y : LUSet} → (X ×₊ (◇₊ Y)) →̇₊ (◇₊ (X ×₊ Y))
   ◇₊-strength {X} {Y} = ◇'-strength {X .𝒳} {Y .𝒳}
-
-
+  
   open import HeytingAlgebras
 
   LUSetSLA : SLAlgebra

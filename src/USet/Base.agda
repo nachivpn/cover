@@ -58,7 +58,7 @@ _→'_ : USet → USet → USet
   wk→ : {w w' : W} → w ⊆ w'
     → ({w1 : W} → w ⊆ w1 → X w1 → Y w1)
     → {w2 : W} → w' ⊆ w2 → X w2 → Y w2
-  wk→ i f = λ i' x → f (⊆-trans i i') x
+  wk→ i f = λ i' x → f (⊑-trans i i') x
 
 open USet renaming (Fam to _₀_) public
 
@@ -86,7 +86,7 @@ _∘'_ : {A B C : USet} → B →̇ C → A →̇ B → A →̇ C
 
 --
 -- Truth
--- 
+--
 unit' : {A : USet} → A →̇ ⊤'
 unit' .apply _ = tt
 
@@ -127,18 +127,18 @@ curry' : {G A B : USet} → (G ×' A) →̇ B → G →̇ (A →' B)
 curry' {G = G} f .apply g i a = f .apply (wk G i g , a)
 
 uncurry' : {G A B : USet} → G →̇ (A →' B) → (G ×' A) →̇ B
-uncurry' f .apply (g , x) = f .apply g ⊆-refl x
+uncurry' f .apply (g , x) = f .apply g ⊑-refl x
 
 lam' = curry'
 
 app' : {G A B : USet} → G →̇ (A →' B) → G →̇ A → G →̇ B
-app' t u .apply g = t .apply g ⊆-refl (u .apply g)
+app' t u .apply g = t .apply g ⊑-refl (u .apply g)
 
 eval' : {A B : USet} → ((A →' B) ×' A) →̇ B
 eval' = app' proj₁' proj₂'
 
 --
--- Disjunction 
+-- Disjunction
 --
 
 inj₁' : {A B : USet} → A →̇ (A ⊎' B)

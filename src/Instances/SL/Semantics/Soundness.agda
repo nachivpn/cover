@@ -1,9 +1,12 @@
+{-# OPTIONS --safe --without-K #-}
+
+module Instances.SL.Semantics.Soundness where
+
 open import HeytingAlgebras
+
 open import Instances.SL.System
 open import Instances.SL.Semantics.Entailment
 import Instances.SL.Semantics.Interpretation as Interpretation
-
-module Instances.SL.Semantics.Soundness where
 
 module Proof
   (𝒜 : SLAlgebra)
@@ -70,5 +73,5 @@ module Proof
     = ≤-trans ⟨ ≤-refl , ⟦-⟧-sound t ⟩' (≤-trans strong' (fmap' (⟦-⟧-sound u)))
 
 -- deductive soundness
-soundness : Γ ⊢ a → Γ ⊨ a
+soundness : Γ ⊢ a → Γ ⊨ₐ a
 soundness t 𝒜 V𝕓 = let open Proof 𝒜 V𝕓 in ⟦-⟧-sound t

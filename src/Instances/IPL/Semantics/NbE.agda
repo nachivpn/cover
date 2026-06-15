@@ -1,3 +1,8 @@
+{-# OPTIONS --safe --without-K #-}
+
+-- Normalization by Evaluation
+module Instances.IPL.Semantics.NbE where
+
 open import HeytingAlgebras
 
 open import Instances.IPL.System
@@ -5,17 +10,14 @@ open import Instances.IPL.Semantics.Entailment
 import Instances.IPL.Semantics.Interpretation as Interpretation
 import Instances.IPL.Semantics.Soundness as Soundness
 
+open import Function using (_∘_)
+open import Data.Sum using (inj₁ ; inj₂)
 open import Data.Product
   using (Σ ; ∃ ; ∃₂ ; _×_ ; _,_ ; -,_ ; proj₁ ; proj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_)
   renaming (refl to ≡-refl ; sym to ≡-sym ; trans to ≡-trans
   ; cong to ≡-cong ; cong₂ to ≡-cong₂ ; subst to ≡-subst)
 
-open import Function
-open import Data.Sum
-
--- Normalization by Evaluation
-module Instances.IPL.Semantics.NbE where
 
 data _⊢Ne_ : Ctx → Form → Set
 data _⊢Nf_ : Ctx → Form → Set
@@ -36,8 +38,8 @@ data _⊢Nf_ where
   ∨-I2  : Γ ⊢Nf b → Γ ⊢Nf (a ∨ b)
   ∨-E   : Γ ⊢Ne (a ∨ b) → (Γ `, a) ⊢Nf c → (Γ `, b) ⊢Nf c → Γ ⊢Nf c
 
-wkNe : Γ ⊆ Γ' → Γ ⊢Ne a → Γ' ⊢Ne a
-wkNf : Γ ⊆ Γ' → Γ ⊢Nf a → Γ' ⊢Nf a
+wkNe : Γ ⊑ Γ' → Γ ⊢Ne a → Γ' ⊢Ne a
+wkNf : Γ ⊑ Γ' → Γ ⊢Nf a → Γ' ⊢Nf a
 
 wkNe i (hyp x)   = hyp (wkVar i x)
 wkNe i (⇒-E n x) = ⇒-E (wkNe i n) (wkNf i x)
@@ -70,83 +72,16 @@ embNf (∨-I1 n)    = ∨-I1 (embNf n)
 embNf (∨-I2 n)    = ∨-I2 (embNf n)
 embNf (∨-E x n m) = ∨-E (embNe x) (embNf n) (embNf m)
 
-data K : Ctx → Set where
-  leaf    : (Γ : Ctx) → K Γ
-  dead    : Γ ⊢Ne ⊥ → K Γ
-  branch  : Γ ⊢Ne (a ∨ b) → K (Γ `, a) → K (Γ `, b) → K Γ
+-----------------------
+-- Base cover system --
+-----------------------
 
-data _∈_ (Δ : Ctx) : K Γ → Set where
-  here : Δ ∈ leaf Δ
-  left : {n : Γ ⊢Ne (a ∨ b)} {k : K (Γ `, a)} {k' : K (Γ `, b)}
-    → Δ ∈ k → Δ ∈ branch n k k'
-  right : {n : Γ ⊢Ne (a ∨ b)} {k : K (Γ `, a)} {k' : K (Γ `, b)}
-    → Δ ∈ k' → Δ ∈ branch n k k'
-
-open import Frame.NFrame 𝕎 K _∈_
-
-wkK : Γ ⊆ Γ' → K Γ → K Γ'
-wkK i (leaf Δ)        = leaf _
-wkK i (dead n)        = dead (wkNe i n)
-wkK i (branch n k k') = branch (wkNe i n) (wkK (keep i) k) (wkK (keep i) k')
-
-wkK-refines : (i : Γ ⊆ Γ') (k : K Γ) → k ≼ wkK i k
-wkK-refines i (leaf _) here
-  = _ , here , i
-wkK-refines i (dead x) ()
-wkK-refines i (branch x k1 k2) (left p)
-  = let (Δ , p' , i') = wkK-refines (keep i) k1 p in
-     (Δ , left p' , i')
-wkK-refines i (branch x k1 k2) (right p)
-  = let (Δ , p' , i') = wkK-refines (keep i) k2 p in
-     (Δ , right p' , i')
-
-reachable : (k : K Γ) → ForAllW k (Γ ⊆_)
-reachable (leaf _)         here
-  = ⊆-refl
-reachable (dead x)         ()
-reachable (branch x k1 k2) (left p)
-  = freshWk ∙ reachable k1 p
-reachable (branch x k1 k2) (right p)
-  = freshWk ∙ reachable k2 p
-
-transK : (k : K Γ) → ForAllW k K → K Γ
-transK (leaf _)        f = f here
-transK (dead x)        f = dead x
-transK (branch x k k') f = branch x (transK k (f ∘ left)) (transK k' (f ∘ right))
-
-transK-bwd-member : (k : K Γ) (h : ForAllW k K)
-  → ForAllW (transK k h) (λ Δ → Exists∈ k (λ Γ∈k → Δ ∈ h Γ∈k))
-transK-bwd-member (leaf Γ)        h p
-  = Γ , here , p
-transK-bwd-member (dead x)        h ()
-transK-bwd-member (branch x k k') h (left p)  =
-  let (vl , p' , pl) = transK-bwd-member k (h ∘ left) p
-  in vl , left p' , pl
-transK-bwd-member (branch x k k') h (right p) =
-  let (vl , p' , pr) = transK-bwd-member k' (h ∘ right) p
-  in vl , right p' , pr
-
-Nuc : NuclearFrame
-Nuc = record
-  { refinement   = record
-    { wkN         = wkK
-    ; wkN-refines = wkK-refines
-    }
-  ; reachability = record
-    { reachable = reachable }
-  ; identity     = record
-    { idN[_]         = leaf
-    ; idN-bwd-member = λ { here → ≡-refl }
-    }
-  ; transitivity = record
-    { transN            = transK
-    ; transN-bwd-member = transK-bwd-member
-    }
-  }
-
-open import USet.Base 𝕎
-open import USet.Localized 𝕎 K _∈_ Nuc
-  renaming (LUSetHA to ℛ) -- ℛ for "residualising model"
+open IPLBaseSystem ⊥ _∨_ _⊢Ne_ wkNe
+  renaming (K₊ to K ; ForAllW₊ to ForAllW ; LUSetHA to ℛ)
+  
+------------------------
+-- Model construction --
+------------------------
 
 Nf' : Form → USet
 Nf' a = uset (_⊢Nf a) wkNf
@@ -174,6 +109,10 @@ Nf₊ a = luset (Nf' a) (run𝒥' {Nf' a} localizeNf)
 open Interpretation ℛ (Nf₊ ∘ 𝕡) -- imports ⟦-⟧
 open LUSet -- imports localize and 𝒳
 
+---------------------
+-- Residualization --
+---------------------
+
 --reify   : ∀ a → ⟦ a ⟧ →̇₊ (Nf₊ a)
 -- or equivalently:
 reify   : ∀ a → ⟦ a ⟧ .𝒳 →̇ Nf' a
@@ -196,6 +135,10 @@ reflect (a ∨ b) = fun λ n → branch n (leaf (_ `, a)) (leaf (_ `, b)) ,
     ; (right here) → inj₂ (reflect b .apply (hyp zero))
     }
 
+------------------
+-- Completeness --
+------------------
+
 idEnv : ∀ Γ → ⟦ Γ ⟧c .𝒳 ₀ Γ
 idEnv []       = _
 idEnv (Γ `, a) = wk (⟦ Γ ⟧c .𝒳) freshWk (idEnv Γ) , reflect a .apply (hyp zero)
@@ -206,5 +149,5 @@ quot {Γ} {a} f = reify a .apply (f .apply (idEnv Γ))
 nbe : Γ ⊢ a → Γ ⊢Nf a
 nbe t = let open Soundness.Proof ℛ (Nf₊ ∘ 𝕡) in quot (⟦-⟧-sound t)
 
-completeness : Γ ⊨ a → Γ ⊢ a
+completeness : Γ ⊨ₐ a → Γ ⊢ a
 completeness f = embNf (quot (f ℛ (Nf₊ ∘ 𝕡)))

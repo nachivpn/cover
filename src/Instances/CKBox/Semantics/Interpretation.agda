@@ -1,9 +1,8 @@
-{-# OPTIONS --safe #-}
+{-# OPTIONS --safe --without-K #-}
 
 open import HeytingAlgebras
 
 open import Instances.CKBox.System
-open import Data.Product using (_×_ ; _,_)
 
 module Instances.CKBox.Semantics.Interpretation
   -- Model
@@ -11,6 +10,8 @@ module Instances.CKBox.Semantics.Interpretation
   -- Valuation for atoms
   (V𝕡 : Atom → 𝒜 .CKBoxAlgebra.Carrier)  
   where
+
+open import Data.Product using (_×_ ; _,_)
 
 open CKBoxAlgebra 𝒜
   using (_≤_)
@@ -41,3 +42,4 @@ open CKBoxAlgebra 𝒜
 -- Interpretation of a "dual" context
 ⟦_⟧c₂ : Ctx₂ → H
 ⟦ Δ , Γ ⟧c₂ = (◻' ⟦ Δ ⟧c) ∧' ⟦ Γ ⟧c
+

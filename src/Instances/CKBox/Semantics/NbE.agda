@@ -1,16 +1,17 @@
+{-# OPTIONS --safe --without-K #-}
+
 module Instances.CKBox.Semantics.NbE where
 
 open import Instances.CKBox.System
 
+open import Neighborhood.Systems 𝕎₂
+
+open import Function using (_∘_)
+open import Data.Sum using (inj₁ ; inj₂)
 open import Data.Product
   using (Σ; ∃; ∃₂; _×_; _,_; -,_ ; proj₁ ; proj₂ ; curry ; uncurry)
-open import Data.Sum
-  using (inj₁ ; inj₂)
-
 open import Relation.Binary.PropositionalEquality using (_≡_)
   renaming (refl to ≡-refl)
-open import Function
-  using (_∘_)
 
 infix  3  _⨾_⊢Ne_
 infix  3  _⨾_⊢Nf_
@@ -36,8 +37,8 @@ data _⨾_⊢Nf_ Δ Γ where
   ∨-I2 : Δ ⨾ Γ ⊢Nf b → Δ ⨾ Γ ⊢Nf (a ∨ b)
   ∨-E  : Δ ⨾ Γ ⊢Ne (a ∨ b) → Δ ⨾ (Γ `, a) ⊢Nf c → Δ ⨾  (Γ `, b) ⊢Nf c → Δ ⨾ Γ ⊢Nf c
 
-wkNe : Δ ⊆ Δ' → Γ ⊆ Γ' → Δ ⨾ Γ ⊢Ne a → Δ' ⨾ Γ' ⊢Ne a
-wkNf : Δ ⊆ Δ' → Γ ⊆ Γ' → Δ ⨾ Γ ⊢Nf a → Δ' ⨾ Γ' ⊢Nf a
+wkNe : Δ ⊑ Δ' → Γ ⊑ Γ' → Δ ⨾ Γ ⊢Ne a → Δ' ⨾ Γ' ⊢Ne a
+wkNf : Δ ⊑ Δ' → Γ ⊑ Γ' → Δ ⨾ Γ ⊢Nf a → Δ' ⨾ Γ' ⊢Nf a
 
 wkNe _  i  (hyp x)   = hyp (wkVar i x)
 wkNe i1 i2 (⇒-E n m) = ⇒-E (wkNe i1 i2 n) (wkNf i1 i2 m)
@@ -73,88 +74,85 @@ data _⨾_∈₊_ : Ctx →  Ctx → K₊ Δ Γ → Set where
 
 K₊₂ = uncurry K₊
 
-wkK₊ : Δ ⊆ Δ' → Γ ⊆ Γ' → K₊ Δ Γ → K₊ Δ' Γ'
+wkK₊ : Δ ⊑ Δ' → Γ ⊑ Γ' → K₊ Δ Γ → K₊ Δ' Γ'
 wkK₊ i1 i2 (leaf _ _)       = leaf _ _
 wkK₊ i1 i2 (dead x)         = dead (wkNe i1 i2 x)
 wkK₊ i1 i2 (branch x k1 k2) = branch (wkNe i1 i2 x) (wkK₊ i1 (keep i2) k1) (wkK₊ i1 (keep i2) k2)
 
-wkK₊₂ : Χ ⊆₂ Χ' → K₊₂ Χ → K₊₂ Χ'
+wkK₊₂ : Χ ⊑₂ Χ' → K₊₂ Χ → K₊₂ Χ'
 wkK₊₂ = uncurry wkK₊
 
 _∈₊_ : Ctx₂ → ∀ {Χ} → K₊₂ Χ → Set
 Χ ∈₊ k = uncurry (_⨾_∈₊ k) Χ
 
-open import Frame.NFrame 𝕎₂ K₊₂ _∈₊_ using ()
-  renaming ( _≼_ to _≼₊_
-           ; ForAllW to ForAllW₊
-           ; ForAll∈ to ForAll∈₊
-           ; Exists∈ to Exists∈₊
-           ; NuclearFrame to NuclearFrame₊
-           )
+open import Neighborhood.Lib 𝕎₂ K₊₂ _∈₊_ 
+  renaming (∣_∣ to ∣_∣₊ ; ForAllW to ForAllW₊)
 
-wkK₊-refines : (i1 : Δ ⊆ Δ') (i2 : Γ ⊆ Γ') (k : K₊ Δ Γ)
-  → k ≼₊ wkK₊ i1 i2 k
-wkK₊-refines i1 i2 (leaf _ _) here
+wkK₊-ref : (i1 : Δ ⊑ Δ') (i2 : Γ ⊑ Γ') (k : K₊ Δ Γ)
+  → ∣ k ∣₊ ≼ ∣ wkK₊ i1 i2 k ∣₊
+wkK₊-ref i1 i2 (leaf _ _) here
   = _ , here , i1 , i2
-wkK₊-refines i1 i2 (dead x) ()
-wkK₊-refines i1 i2 (branch x k1 k2) (left p)
-  = let (Δ , p' , i') = wkK₊-refines i1 (keep i2) k1 p in
+wkK₊-ref i1 i2 (dead x) ()
+wkK₊-ref i1 i2 (branch x k1 k2) (left p)
+  = let (Δ , p' , i') = wkK₊-ref i1 (keep i2) k1 p in
      (Δ , left p' , i')
-wkK₊-refines i1 i2 (branch x k1 k2) (right p)
-  = let (Δ , p' , i') = wkK₊-refines i1 (keep i2) k2 p in
+wkK₊-ref i1 i2 (branch x k1 k2) (right p)
+  = let (Δ , p' , i') = wkK₊-ref i1 (keep i2) k2 p in
      (Δ , right p' , i')
 
-wkK₊₂-refines : (i : Χ ⊆₂ Χ') (k : K₊₂ Χ) → k ≼₊ wkK₊₂ i k
-wkK₊₂-refines = uncurry wkK₊-refines
+wkK₊₂-ref : (i : Χ ⊑₂ Χ') (k : K₊₂ Χ) → ∣ k ∣₊ ≼ ∣ wkK₊₂ i k ∣₊
+wkK₊₂-ref = uncurry wkK₊-ref
 
-reachable₊ : (k : K₊ Δ Γ) → ForAllW₊ k ((Δ , Γ) ⊆₂_)
-reachable₊ (leaf _ _)         here
-  = ⊆₂-refl
-reachable₊ (dead x)         ()
-reachable₊ (branch x k1 k2) (left p)
-  = ⊆₂-trans freshWkR₂ (reachable₊ k1 p)
-reachable₊ (branch x k1 k2) (right p)
-  = ⊆₂-trans freshWkR₂ (reachable₊ k2 p)
+K₊-ref : (k : K₊ Δ Γ) → ForAllW₊ k ((Δ , Γ) ⊑₂_)
+K₊-ref (leaf _ _)         here
+  = ⊑₂-refl
+K₊-ref (dead x)         ()
+K₊-ref (branch x k1 k2) (left p)
+  = ⊑₂-trans freshWkR₂ (K₊-ref k1 p)
+K₊-ref (branch x k1 k2) (right p)
+  = ⊑₂-trans freshWkR₂ (K₊-ref k2 p)
+
+idK₊ = leaf
+
+idK₊-sub : ∣ idK₊ Δ Γ ∣₊ ⊆ ⟨ Δ , Γ ⟩
+idK₊-sub here = ≡-refl
 
 transK₊ : (k : K₊ Δ Γ) → ForAllW₊ k K₊₂ → K₊ Δ Γ
 transK₊ (leaf _ _)      f = f here
 transK₊ (dead x)        f = dead x
 transK₊ (branch x k k') f = branch x (transK₊ k (f ∘ left)) (transK₊ k' (f ∘ right))
 
-transK₊-bwd-member : (k : K₊ Δ Γ) (h : ForAllW₊ k K₊₂)
-  → ForAllW₊ (transK₊ k h) (λ Δ → Exists∈₊ k (λ Γ∈₊k → Δ ∈₊ h Γ∈₊k))
-transK₊-bwd-member (leaf Δ Γ)      h p
-  = (Δ , Γ) , here , p
-transK₊-bwd-member (dead x)        h ()
-transK₊-bwd-member (branch x k k') h (left p)  =
-  let (vl , p' , pl) = transK₊-bwd-member k (h ∘ left) p
-  in vl , left p' , pl
-transK₊-bwd-member (branch x k k') h (right p) =
-  let (vl , p' , pr) = transK₊-bwd-member k' (h ∘ right) p
-  in vl , right p' , pr
+transK₊-sub : (k : K₊ Δ Γ) (h : ForAllW₊ k K₊₂)
+  → ∣ transK₊ k h ∣₊ ⊆ ⨆ ∣ k ∣₊ (∣_∣₊ ∘ h)
+transK₊-sub (leaf Δ Γ)      h p
+  = ((Δ , Γ) , here) , p
+transK₊-sub (dead x)        h ()
+transK₊-sub (branch x k k') h (left p)  =
+  let ((vl , p') , pl) = transK₊-sub k (h ∘ left) p
+  in (vl , left p') , pl
+transK₊-sub (branch x k k') h (right p) =
+  let ((vl , p') , pr) = transK₊-sub k' (h ∘ right) p
+  in (vl , right p') , pr
 
-Nuc₊ : NuclearFrame₊
-Nuc₊ = record
-  { refinement   = record
-    { wkN         = wkK₊₂
-    ; wkN-refines = wkK₊₂-refines
-    }
-  ; reachability = record
-    { reachable = reachable₊ }
-  ; identity     = record
-    { idN[_]         = uncurry leaf
-    ; idN-bwd-member = λ { here → ≡-refl }
-    }
-  ; transitivity = record
-    { transN            = transK₊
-    ; transN-bwd-member = transK₊-bwd-member
-    }
+NS₊ : NeighborhoodSystem
+NS₊ = record
+  { N          = K₊₂
+  ; _∈_        = _∈₊_
+  ; refinement = record { wkN = wkK₊₂ ; wkN-ref = wkK₊₂-ref }
   }
 
--- import USet, etc.
+CS₊ : CoverSystem NS₊
+CS₊ = record
+  { inclusion    = record { N-ref = K₊-ref }
+  ; identity     = record { idN[_] = uncurry idK₊ ; idN-sub = idK₊-sub }
+  ; transitivity = record { transN = transK₊ ; transN-sub = transK₊-sub }
+  }
+
+WCS₊ : WeakCoverSystem NS₊
+WCS₊ = CoverSystem.weakCoverSystem CS₊
+
 open import USet.Base 𝕎₂
--- imports 𝒥', etc.
-open import USet.Localized 𝕎₂ K₊₂ _∈₊_ Nuc₊
+open import USet.Localized 𝕎₂ WCS₊
 
 ---------------------
 -- The ◻' modality --
@@ -179,7 +177,7 @@ there⁻¹ : {n : Δ ⨾ Γ ⊢Ne (◻ a)} {k : K◻ (Δ `, a) Γ}
   → Ξ ⨾ Θ ∈◻ cons n k → Ξ ⨾ Θ ∈◻ k
 there⁻¹ (there x) = x
 
-wkK◻ : Δ ⊆ Δ' → Γ ⊆ Γ' → K◻ Δ Γ → K◻ Δ' Γ'
+wkK◻ : Δ ⊑ Δ' → Γ ⊑ Γ' → K◻ Δ Γ → K◻ Δ' Γ'
 wkK◻ i1 i2 (single _ _)     = single _ _
 wkK◻ i1 i2 (cons x k)       = cons (wkNe i1 i2 x) (wkK◻ (keep i1) i2 k)
 wkK◻ i1 i2 (dead x)         = dead (wkNe i1 i2 x)
@@ -187,37 +185,31 @@ wkK◻ i1 i2 (branch x k1 k2) = branch (wkNe i1 i2 x) (wkK◻ i1 (keep i2) k1) (
 
 K◻₂ = uncurry K◻
 
-wkK◻₂ : Χ ⊆₂ Χ' → K◻₂ Χ → K◻₂ Χ'
+wkK◻₂ : Χ ⊑₂ Χ' → K◻₂ Χ → K◻₂ Χ'
 wkK◻₂ = uncurry wkK◻
 
 _∈◻_ : Ctx₂ → ∀ {Χ} → K◻₂ Χ → Set
 Χ ∈◻ k = uncurry (_⨾_∈◻ k) Χ
 
-open import Frame.NFrame 𝕎₂ K◻₂ _∈◻_ using ()
-  renaming ( _≼_ to _≼◻_
-           ; ForAllW to ForAllW◻
-           ; Exists∈ to Exists∈◻
-           ; ForAll∈ to ForAll∈◻
-           ; Refinement to Refinement◻
-           ; MonoidalFrame to MonoidalFrame◻
-           )
+open import Neighborhood.Lib 𝕎₂ K◻₂ _∈◻_ using ()
+  renaming (∣_∣ to ∣_∣◻ ; ForAllW to ForAllW◻)
 
-wkK◻-refines : (i1 : Δ ⊆ Δ') (i2 : Γ ⊆ Γ') (k : K◻ Δ Γ)
-  → k ≼◻ wkK◻ i1 i2 k
-wkK◻-refines i1 i2 (single _ _) here      = _ , here , base , i1
-wkK◻-refines i1 i2 (cons x k)   (there p) =
-  let (_ , p' , i1' , i2') = wkK◻-refines (keep i1) i2 k p
+wkK◻-ref : (i1 : Δ ⊑ Δ') (i2 : Γ ⊑ Γ') (k : K◻ Δ Γ)
+  → ∣ k ∣◻ ≼ ∣ wkK◻ i1 i2 k ∣◻
+wkK◻-ref i1 i2 (single _ _) here      = _ , here , base , i1
+wkK◻-ref i1 i2 (cons x k)   (there p) =
+  let (_ , p' , i1' , i2') = wkK◻-ref (keep i1) i2 k p
   in _ , there p' , i1' , i2'
-wkK◻-refines i1 i2 (dead x) ()
-wkK◻-refines i1 i2 (branch x k1 k2) (left p)
-  = let (Δ , p' , i') = wkK◻-refines i1 (keep i2) k1 p in
+wkK◻-ref i1 i2 (dead x) ()
+wkK◻-ref i1 i2 (branch x k1 k2) (left p)
+  = let (Δ , p' , i') = wkK◻-ref i1 (keep i2) k1 p in
      (Δ , left p' , i')
-wkK◻-refines i1 i2 (branch x k1 k2) (right p)
-  = let (Δ , p' , i') = wkK◻-refines i1 (keep i2) k2 p in
+wkK◻-ref i1 i2 (branch x k1 k2) (right p)
+  = let (Δ , p' , i') = wkK◻-ref i1 (keep i2) k2 p in
      (Δ , right p' , i')
 
-wkK◻₂-refines₂ : (i : Χ ⊆₂ Χ') (k : K◻₂ Χ) → k ≼◻ wkK◻₂ i k
-wkK◻₂-refines₂ = uncurry wkK◻-refines
+wkK◻₂-ref₂ : (i : Χ ⊑₂ Χ') (k : K◻₂ Χ) → ∣ k ∣◻ ≼ ∣ wkK◻₂ i k ∣◻
+wkK◻₂-ref₂ = uncurry wkK◻-ref
 
 _⊗_ : K◻ Δ Γ → K◻ Δ Γ → K◻ Δ Γ
 single Δ Γ     ⊗ k' = k'
@@ -226,62 +218,68 @@ dead x         ⊗ k' = dead x
 branch x k1 k2 ⊗ k' = branch x (k1 ⊗ wkK◻₂ freshWkR₂ k') (k2 ⊗ wkK◻₂ freshWkR₂ k')
 
 -- Note: Interestingly, this property doesn't hold due to branch
--- ∈-fwd-reachable : (k : K◻ Δ Γ) → Ξ ⨾ Θ ∈ k → Ξ ⊆ Γ
+-- ∈-fwd-reachable : (k : K◻ Δ Γ) → Ξ ⨾ Θ ∈ k → Ξ ⊑ Γ
 
-∈-bwd-reachable : (k : K◻ Δ Γ) → Ξ ⨾ Θ ∈◻ k → Δ ⊆ Θ
-∈-bwd-reachable (single Δ Γ)     here      = ⊆-refl[ Δ ]
+∈-bwd-reachable : (k : K◻ Δ Γ) → Ξ ⨾ Θ ∈◻ k → Δ ⊑ Θ
+∈-bwd-reachable (single Δ Γ)     here      = ⊑-refl[ Δ ]
 ∈-bwd-reachable (cons x k)       (there p) = freshWk ∙ ∈-bwd-reachable k p
 ∈-bwd-reachable (dead x)         ()
 ∈-bwd-reachable (branch x k1 k2) (left p)  = ∈-bwd-reachable k1 p
 ∈-bwd-reachable (branch x k1 k2) (right p) = ∈-bwd-reachable k2 p
 
-∈-bwd-reachable₂ : (k : K◻ Δ Γ) → Ξ ⨾ Θ ∈◻ k → ([] , Δ) ⊆₂ (Ξ , Θ)
-∈-bwd-reachable₂ k p = ⊆-init[ _ ] , ∈-bwd-reachable k p
+∈-bwd-reachable₂ : (k : K◻ Δ Γ) → Ξ ⨾ Θ ∈◻ k → ([] , Δ) ⊑₂ (Ξ , Θ)
+∈-bwd-reachable₂ k p = ⊑-init[ _ ] , ∈-bwd-reachable k p
 
-⊗-bwd-reachable : (k1 k2 : K◻ Δ Γ) → ForAllW◻ (k1 ⊗ k2)
-     (λ Χ' → ∃₂ (λ Χ1 Χ2 → Χ1 ∈◻ k1 × Χ1 ⊆₂ Χ' × Χ2 ∈◻ k2 × Χ2 ⊆₂ Χ'))
-⊗-bwd-reachable (single Δ Γ) k'      {Ξ , Θ}       p
-  = ([] , Δ) , (Ξ , Θ)
-  , here , ∈-bwd-reachable₂ k' p
-  , p    , ⊆₂-refl
-⊗-bwd-reachable (cons x k) k'       {Ξ , Θ}     (there p)
-  = let ((Δ1 , Γ1) , (Δ2 , Γ2) , p1 , i1 , p2 , i2) = ⊗-bwd-reachable k (wkK◻₂ freshWkL₂ k') p
-        ((Δ2' , Γ2') , p2' , i2') = wkK◻-refines freshWk ⊆-refl k' p2
-    in _ , _
-      , there p1 , i1
-      , p2' , ⊆₂-trans i2' i2
-⊗-bwd-reachable (dead x) k2          {Ξ , Θ}     ()
-⊗-bwd-reachable (branch x k1 k2) k'  {Ξ , Θ}     (left p)
-  = let ((Δ1 , Γ1) , (Δ2 , Γ2) , p1 , i1 , p2 , i2) = ⊗-bwd-reachable k1 (wkK◻₂ freshWkR₂ k') p
-        ((Δ2' , Γ2') , p2' , i2') = wkK◻₂-refines₂ freshWkR₂ k' p2
-    in _ , _
-      , left p1 , i1
-      , p2' , ⊆₂-trans i2' i2
-⊗-bwd-reachable (branch x k1 k2) k'  {Ξ , Θ}     (right p)
-  = let ((Δ1 , Γ1) , (Δ2 , Γ2) , p1 , i1 , p2 , i2) = ⊗-bwd-reachable k2 (wkK◻₂ freshWkR₂ k') p
-        ((Δ2' , Γ2') , p2' , i2') = wkK◻₂-refines₂ freshWkR₂ k' p2
-    in _ , _
-      , right p1 , i1
-      , p2' , ⊆₂-trans i2' i2
+⊗-ref₁ : (k1 k2 : K◻ Δ Γ) → ∣ k1 ∣◻ ≼ ∣ k1 ⊗ k2 ∣◻
+⊗-ref₁ (single Δ Γ) k2 {Ξ , Θ} p
+  = ([] , Δ) , here , ∈-bwd-reachable₂ k2 p
+⊗-ref₁ (cons x k1) k2 (there p)
+  = let ((Δ , Γ) , p' , i') = ⊗-ref₁ k1 (wkK◻₂ freshWkL₂ k2) p
+    in (Δ , Γ) , there p' , i'
+⊗-ref₁ (branch x k1 _) k2 (left p)
+  = let ((Δ , Γ) , p' , i') = ⊗-ref₁ k1 (wkK◻₂ freshWkR₂ k2) p
+    in (Δ , Γ) , left p' , i'
+⊗-ref₁ (branch x _ k1) k2 (right p)
+  = let ((Δ , Γ) , p' , i') = ⊗-ref₁ k1 (wkK◻₂ freshWkR₂ k2) p
+    in (Δ , Γ) , right p' , i'
+
+⊗-ref₂ : (k1 k2 : K◻ Δ Γ) → ∣ k2 ∣◻ ≼ ∣ k1 ⊗ k2 ∣◻
+⊗-ref₂ (single _ _)     k2 {Ξ , Θ} p
+  = (Ξ , Θ) , p , ⊑₂-refl
+⊗-ref₂ (cons x k1)      k2 (there p)
+  = let ((Δ , Γ) , p' , i') = ⊗-ref₂ k1 (wkK◻₂ freshWkL₂ k2) p
+        ((Δ' , Γ') , p'' , i'') = wkK◻-ref freshWk ⊑-refl k2 p'
+    in (Δ' , Γ') , p'' , ⊑₂-trans i'' i'
+⊗-ref₂ (branch x k1 _) k2 (left p)
+  = let ((Δ , Γ) , p' , i') = ⊗-ref₂ k1 (wkK◻₂ freshWkR₂ k2) p
+        ((Δ' , Γ') , p'' , i'') = wkK◻₂-ref₂ freshWkR₂ k2 p'
+    in (Δ' , Γ') , p'' , ⊑₂-trans i'' i'
+⊗-ref₂ (branch x _ k1) k2 (right p)
+  = let ((Δ , Γ) , p' , i') = ⊗-ref₂ k1 (wkK◻₂ freshWkR₂ k2) p
+        ((Δ' , Γ') , p'' , i'') = wkK◻₂-ref₂ freshWkR₂ k2 p'
+    in (Δ' , Γ') , p'' , ⊑₂-trans i'' i'
 
 unitK◻ : ∀ Χ → K◻₂ Χ
 unitK◻ Χ = single _ _
 
-MNF : MonoidalFrame◻
-MNF = record
-  { refinement       = record
-    { wkN = wkK◻₂
-    ; wkN-refines = wkK◻₂-refines₂
+NS◻ : NeighborhoodSystem
+NS◻ = record
+  { N          = K◻₂
+  ; _∈_        = _∈◻_
+  ; refinement = record { wkN = wkK◻₂ ; wkN-ref = wkK◻₂-ref₂ }
+  }
+
+CKMS◻ : CKBoxModalSystem NS◻
+CKMS◻ = record
+  { intclosed = record
+    { _⊗_   = _⊗_
+    ; ⊗-ref = λ k1 k2 → ⊗-ref₁ k1 k2 , ⊗-ref₂ k1 k2
     }
-  ; multiplicativity = record
-    { _⊗_             = _⊗_
-    ; ⊗-bwd-reachable = ⊗-bwd-reachable
-    }
-  ; unitality        = record { unitN[_] = unitK◻ }
+  ; seriality = record { unitN[_] = unitK◻ }
   }
 
 -- imports ◻', etc.
-open import USet.Box.CKBox.Cover 𝕎₂ MNF
+open import USet.Box.CKBox.Cover 𝕎₂ CKMS◻
 
 ------------------------
 -- Modal Localization --
@@ -295,23 +293,27 @@ transK₊◻ (branch x k1 k2) f = branch x
   (transK₊◻ k2 (f ∘ right))
 
 transK₊◻-bwd-member : (k : K₊ Δ Γ) (h : ForAllW₊ k K◻₂)
-  → ForAllW◻ (transK₊◻ k h) λ v → Exists∈₊ k λ u∈n → v ∈◻ h u∈n
-transK₊◻-bwd-member (leaf Δ Γ)       f p         = (Δ , Γ) , here , p
+  → ∣ transK₊◻ k h ∣◻ ⊆ ⨆ ∣ k ∣₊ (∣_∣◻ ∘ h)
+transK₊◻-bwd-member (leaf Δ Γ)       f p         = ((Δ , Γ) , here) , p
 transK₊◻-bwd-member (branch x k1 k2) f (left p)  =
-  let (Χ , p , q) = transK₊◻-bwd-member k1 (f ∘ left) p
-  in (Χ , left p , q)
+  let ((Χ , p) , q) = transK₊◻-bwd-member k1 (f ∘ left) p
+  in (Χ , left p) , q
 transK₊◻-bwd-member (branch x k1 k2) f (right p) =
-  let (Χ , p , q) = transK₊◻-bwd-member k2 (f ∘ right) p
-  in (Χ , right p , q)
+  let ((Χ , p) , q) = transK₊◻-bwd-member k2 (f ∘ right) p
+  in (Χ , right p) , q
 
 ◻'-localize-imm : {A : USet} → 𝒥' (◻' A) →̇ ◻' A
 ◻'-localize-imm .apply (k , fam) = transK₊◻ k (proj₁ ∘ fam) , λ x →
-  let (x , y , z) = transK₊◻-bwd-member k (proj₁ ∘ fam) x in (proj₂ ∘ fam) y z
+  let (x , y) , z = transK₊◻-bwd-member k (proj₁ ∘ fam) x in (proj₂ ∘ fam) y z
 
 ◻'-localize : (A : USet) → 𝒥' (◻' A) →̇ ◻' (𝒥' A)
 ◻'-localize A = ◻'-map {A} {𝒥' A} 𝒥'-point ∘' ◻'-localize-imm {A}
 
-open LocalizedCover Nuc₊ (λ {A} → ◻'-localize A) renaming (LUSetCKBoxA to ℛ)
+open LocalizedCover WCS₊ (λ {A} → ◻'-localize A) renaming (LUSetCKBoxA to ℛ)
+
+------------------------
+-- Model construction --
+------------------------
 
 ◻-I' : {A : USet} → A ₀ ([] , Δ) → ◻' A ₀ (Δ , Γ)
 ◻-I' x = (single _ _) , (λ { here → x })
@@ -343,7 +345,7 @@ open import Instances.CKBox.Semantics.Interpretation ℛ (Nf₊ ∘ 𝕡) hiding
 open LUSet -- imports localize and 𝒳
 
 ---------------------
--- Residualisation --
+-- Residualization --
 ---------------------
 
 ◻'-collect : ◻' (Nf' a) →̇ Nf' (◻ a)
@@ -364,7 +366,7 @@ reflect : ∀ a → Ne' a →̇ ⟦ a ⟧ .𝒳
 reify (𝕡 i)   = id'
 reify ⊤       = fun (λ _ → ⊤-I)
 reify ⊥       = Nf₊ ⊥ .localize ∘' map𝒥' (⊥'-elim {Nf' ⊥})
-reify (a ⇒ b) = fun λ f → ⇒-I (reify b .apply (f (⊆-refl , freshWk) (reflect a .apply (hyp zero))))
+reify (a ⇒ b) = fun λ f → ⇒-I (reify b .apply (f (⊑-refl , freshWk) (reflect a .apply (hyp zero))))
 reify (a ∧ b) = fun λ x → ∧-I (reify a .apply (proj₁ x)) (reify b .apply (proj₂ x))
 reify (a ∨ b) = Nf₊ (a ∨ b) .localize ∘' map𝒥' [ ∨-I1' ∘' reify a  , ∨-I2' ∘' reify b ]'
 reify (◻ a)   = ◻'-collect ∘' ◻'-map (reify a)

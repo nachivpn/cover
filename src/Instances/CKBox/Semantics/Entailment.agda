@@ -1,4 +1,6 @@
-{-# OPTIONS --safe #-}
+{-# OPTIONS --safe --without-K #-}
+
+module Instances.CKBox.Semantics.Entailment where
 
 open import HeytingAlgebras
 
@@ -7,13 +9,10 @@ import Instances.CKBox.Semantics.Interpretation as Interpretation
 
 open import Data.Product using (_,_)
 
-module Instances.CKBox.Semantics.Entailment
-  where
-
 -- Entailment in a model
-_⨾_⨾_⊨_ : CKBoxAlgebra → Ctx → Ctx → Form → Set₁
-𝒜 ⨾ Δ ⨾ Γ ⊨ a = ∀ V𝕡 → let open Interpretation 𝒜 V𝕡 in ⟦ Δ , Γ ⟧c₂ ≤ ⟦ a ⟧
+_⨾_⨾_⊨ₐ_ : CKBoxAlgebra → Ctx → Ctx → Form → Set₁
+𝒜 ⨾ Δ ⨾ Γ ⊨ₐ a = ∀ V𝕡 → let open Interpretation 𝒜 V𝕡 in ⟦ Δ , Γ ⟧c₂ ≤ ⟦ a ⟧
 
 -- Entailment
-_⨾_⊨_ : Ctx → Ctx → Form → Set₂
-Δ ⨾ Γ ⊨ a = ∀ 𝒜 → 𝒜 ⨾ Δ ⨾ Γ ⊨ a
+_⨾_⊨ₐ_ : Ctx → Ctx → Form → Set₂
+Δ ⨾ Γ ⊨ₐ a = ∀ 𝒜 → 𝒜 ⨾ Δ ⨾ Γ ⊨ₐ a

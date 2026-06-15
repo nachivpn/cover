@@ -1,10 +1,12 @@
+{-# OPTIONS --safe --without-K #-}
+
+module Instances.IPL.Semantics.Soundness where
+
 open import HeytingAlgebras
 
 open import Instances.IPL.System
 open import Instances.IPL.Semantics.Entailment
 import Instances.IPL.Semantics.Interpretation as Interpretation
-
-module Instances.IPL.Semantics.Soundness where
 
 module Proof
   (ℋ : HeytingAlgebra)
@@ -13,7 +15,7 @@ module Proof
   where
 
   open Interpretation ℋ V𝕡
-
+  
   open HeytingAlgebra ℋ
     using ()
     renaming ( maximum to unit'
@@ -65,6 +67,6 @@ module Proof
     = ≤-trans ⟨ ≤-refl , ⟦-⟧-sound t ⟩'
         (≤-trans (∧'-distr-∨'-forth ⟦ Γ ⟧c ⟦ a ⟧ ⟦ b ⟧) [ ⟦-⟧-sound u1 , ⟦-⟧-sound u2 ]')
 
--- deductive soundness
-soundness : Γ ⊢ a → Γ ⊨ a
+-- algebraic soundness
+soundness : Γ ⊢ a → Γ ⊨ₐ a
 soundness t ℋ V𝕓 = let open Proof ℋ V𝕓 in ⟦-⟧-sound t
