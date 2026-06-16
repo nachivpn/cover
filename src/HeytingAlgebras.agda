@@ -1,9 +1,9 @@
 {-# OPTIONS --safe --without-K #-}
 
+module HeytingAlgebras where
+
 open import Level using (0ℓ ; suc)
 open import Relation.Binary.Lattice.Bundles renaming (HeytingAlgebra to LHeytingAlgebra)
-
-module HeytingAlgebras where
 
 private 1ℓ = suc 0ℓ
 HeytingAlgebra = LHeytingAlgebra 1ℓ 0ℓ 0ℓ
