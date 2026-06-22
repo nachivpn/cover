@@ -27,4 +27,10 @@ record MPLAlgebra : Set₂ where
     ⊥       : Carrier
     _∨_     : Carrier → Carrier → Carrier
     minimum : Minimum _≤_ ⊥
-    ∨-least : ∀ {x y z} → x ≤ z → y ≤ z → (x ∨ y) ≤ z
+    ∨-mon   : ∀ {x y x' y'} → x ≤ x' → y ≤ y' → (x ∨ y) ≤ (x' ∨ y')
+    ∨-comm  : ∀ {x y} → x ∨ y ≤ y ∨ x
+    ∨-idem  : ∀ {x} → x ∨ x ≤ x
+    ∨-weak  : ∀ {x y} → x ∨ x ≤ x ∨ y
+
+  ∨-least : ∀ {x y z} → x ≤ z → y ≤ z → (x ∨ y) ≤ z
+  ∨-least p q = trans (∨-mon p q) ∨-idem

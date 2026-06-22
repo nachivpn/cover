@@ -12,6 +12,8 @@ open import USet.Box.CKBox.Cover
 open import USet.Lax.SL.Cover
 open import USet.Lax.PLL.Cover
 open import USet.Lax.PLL.Relational
+open import USet.Lattice.Localized
+open import USet.MPL.Localized
 
 -- Boilerplate for proof systems/calculi
 open import Context
@@ -65,6 +67,13 @@ open import Instances.LatLog.Semantics.Interpretation
 open import Instances.LatLog.Semantics.Soundness
 open import Instances.LatLog.Semantics.Completeness
 --open import Instances.LatLog.Semantics.NbE
+
+-- MPL ("Minimal Positive Logic")
+open import Instances.MPL.System
+open import Instances.MPL.Semantics.Interpretation
+open import Instances.MPL.Semantics.Soundness
+open import Instances.MPL.Semantics.Completeness
+--open import Instances.MPL.Semantics.NbE
 
 --------------------------
 -- Programming examples --
