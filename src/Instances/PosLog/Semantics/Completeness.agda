@@ -1,10 +1,10 @@
 {-# OPTIONS --safe --without-K #-}
 
-module Instances.MPL.Semantics.Completeness where
+module Instances.PosLog.Semantics.Completeness where
 
-open import Instances.MPL.System
-open import Instances.MPL.Semantics.Entailment
-import Instances.MPL.Semantics.Interpretation as Interpretation
+open import Instances.PosLog.System
+open import Instances.PosLog.Semantics.Entailment
+import Instances.PosLog.Semantics.Interpretation as Interpretation
 
 open import Function using (_∘_)
 open import Data.Sum using (_⊎_ ; inj₁ ; inj₂)
@@ -77,8 +77,8 @@ NS = record
   ; refinement = record { wkN = wkK₊ ; wkN-ref = wkK₊-ref }
   }
 
-MS : MPLSystem NS
-MS = record {
+PS : PosLogSystem NS
+PS = record {
   transitivity = record
     { transN = transK₊
     ; transN-sub = transK₊-sub
@@ -86,7 +86,7 @@ MS = record {
   }
 
 open import USet.Base 𝕎
-open import USet.MPL.Localized 𝕎 MS renaming (LUSetMPL to ℛ)
+open import USet.Positive.Localized 𝕎 PS renaming (LUSetPosLog to ℛ)
 
 ------------------------
 -- Model construction --

@@ -1,7 +1,7 @@
 {-# OPTIONS --safe --without-K #-}
 
--- Minimal Positive Logic
-module Instances.MPL.System where
+-- Positive Logic
+module Instances.PosLog.System where
 
 open import Data.Nat using () renaming (ℕ to Atom) public
 

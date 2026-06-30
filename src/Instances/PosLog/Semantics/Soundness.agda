@@ -1,22 +1,22 @@
 {-# OPTIONS --safe --without-K #-}
 
-module Instances.MPL.Semantics.Soundness where
+module Instances.PosLog.Semantics.Soundness where
 
 open import NonDistributiveAlgebras
 
-open import Instances.MPL.System
-open import Instances.MPL.Semantics.Entailment
-import Instances.MPL.Semantics.Interpretation as Interpretation
+open import Instances.PosLog.System
+open import Instances.PosLog.Semantics.Entailment
+import Instances.PosLog.Semantics.Interpretation as Interpretation
 
 module Proof
-  (𝒫 : MPLAlgebra)
-  (open MPLAlgebra 𝒫 using (Carrier))
+  (𝒜 : PosLogAlgebra)
+  (open PosLogAlgebra 𝒜 using (Carrier))
   (V𝕡 : Atom → Carrier) -- Valuation of proposition 𝕡
   where
 
-  open Interpretation 𝒫 V𝕡
+  open Interpretation 𝒜 V𝕡
   
-  open MPLAlgebra 𝒫
+  open PosLogAlgebra 𝒜
     using ()
     renaming ( maximum to unit'
              ; minimum to init'
@@ -27,7 +27,6 @@ module Proof
              ; x∧y≤y to proj₂'
              ; ∨-least to [_,_]'
              ) public
---  open import Relation.Binary.Lattice.Properties.MPLAlgebra 𝒫 public
 
   -- Interpretation is sound for hypothesis
   ⟦-⟧-sound-hyp : Var Γ a → ⟦ Γ ⟧c ≤ ⟦ a ⟧
@@ -53,9 +52,9 @@ module Proof
   ⟦-⟧-sound {Γ} {c} (∨-Cm t)
     = ≤-trans (⟦-⟧-sound t) ∨-comm
   ⟦-⟧-sound {Γ} {c} (∨-Id t)
-    = ≤-trans (⟦-⟧-sound t) ∨-idem
+    = ≤-trans (⟦-⟧-sound t) ∨-idemˡ
   ⟦-⟧-sound {Γ} {c} (∨-Wk t)
-    = ≤-trans (⟦-⟧-sound t) ∨-weak
+    = ≤-trans (⟦-⟧-sound t) ∨-wken₂
   ⟦-⟧-sound {Γ} {c} (∨-M {a = a} {b} t t₁ t₂)
     = ≤-trans (⟦-⟧-sound t) (∨-mon
       (≤-trans ⟨ unit' ⟦ a ⟧ , ≤-refl ⟩' (⟦-⟧-sound t₁))
@@ -63,5 +62,5 @@ module Proof
 
 -- algebraic soundness
 soundness : Γ ⊢ a → Γ ⊨ₐ a
-soundness t 𝒫 V𝕓 = let open Proof 𝒫 V𝕓 in ⟦-⟧-sound t
+soundness t 𝒜 V𝕓 = let open Proof 𝒜 V𝕓 in ⟦-⟧-sound t
 

@@ -9,7 +9,7 @@ module USet.Lattice.Localized
   (let open Sys 𝕎)
   {NS : NeighborhoodSystem}
   (let open NeighborhoodSystem NS)
-  (LS : LatticeSystem NS)
+  (LS : LatLogSystem NS)
   where
 
 open import Function using (id ; const ; _∘_ ; flip)
@@ -36,7 +36,7 @@ open import USet.Cover 𝕎 NS renaming
   ; map𝒞' to map𝒥'
   ; run𝒞' to run𝒥'
   ) public
-open LatticeSystem LS
+open LatLogSystem LS
 
 private
   variable

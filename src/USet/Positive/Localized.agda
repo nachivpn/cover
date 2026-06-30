@@ -3,13 +3,13 @@
 open import Frame.IFrame
 import Neighborhood.Systems as Sys
 
-module USet.MPL.Localized
+module USet.Positive.Localized
   {W : Set} {_⊑_ : W → W → Set}
   (𝕎 : Preorder W _⊑_)
   (let open Sys 𝕎)
   {NS : NeighborhoodSystem}
   (let open NeighborhoodSystem NS)
-  (MS : MPLSystem NS)
+  (MS : PosLogSystem NS)
   where
 
 open import Function using (id ; const ; _∘_ ; flip)
@@ -36,7 +36,7 @@ open import USet.Cover 𝕎 NS renaming
   ; map𝒞' to map𝒥'
   ; run𝒞' to run𝒥'
   ) public
-open MPLSystem MS
+open PosLogSystem MS
 
 private
   variable
@@ -144,7 +144,6 @@ A ↔̇₊ B = (A →̇₊ B) × (B →̇₊ A)
   ; trans         = →̇-trans
   }
 
-
 private
   LUSetFormsBL : IsBoundedMeetSemilattice _↔̇₊_ _→̇₊_ _×₊_ ⊤₊
   LUSetFormsBL = record
@@ -155,17 +154,16 @@ private
     ; maximum = λ _ → unit'
     }
 
-LUSetBL : BoundedMeetSemilattice
-LUSetBL = record
-  { Carrier = LUSet
-  ; _≈_     = _↔̇₊_
-  ; _≤_     = _→̇₊_
-  ; _∧_     = _×₊_
-  ; ⊤       = ⊤₊
-  ; isBoundedMeetSemilattice = LUSetFormsBL
-  }
+  LUSetBL : BoundedMeetSemilattice
+  LUSetBL = record
+    { Carrier = LUSet
+    ; _≈_     = _↔̇₊_
+    ; _≤_     = _→̇₊_
+    ; _∧_     = _×₊_
+    ; ⊤       = ⊤₊
+    ; isBoundedMeetSemilattice = LUSetFormsBL
+    }
 
-private
   ⊎₊-mon : {A B A' B' : LUSet} → A →̇₊ A' → B →̇₊ B' → (A ⊎₊ B) →̇₊ (A' ⊎₊ B')
   ⊎₊-mon f g = map𝒥' [ inj₁' ∘' f , inj₂' ∘' g ]'
 
@@ -178,14 +176,15 @@ private
   ⊎₊-weak : ∀ {A B} → (A ⊎₊ A) →̇₊ (A ⊎₊ B)
   ⊎₊-weak {A} = map𝒥' [ inj₁' , inj₁' ]'
 
-LUSetMPL : MPLAlgebra
-LUSetMPL = record
-  { ℬ      = LUSetBL
-  ; ⊥       = ⊥₊
-  ; _∨_     = _⊎₊_
-  ; minimum = λ A → ⊥₊-elim {A}
-  ; ∨-mon   = λ {A} {B} {A'} {B'} → ⊎₊-mon {A} {B} {A'} {B'}
-  ; ∨-comm  = λ {A} {B} → ⊎₊-comm {A} {B}
-  ; ∨-idem  = λ {A} → ⊎₊-idem {A}
-  ; ∨-weak  = λ {A} {B} → ⊎₊-weak {A} {B}
+LUSetPosLog : PosLogAlgebra
+LUSetPosLog = record
+  { ℬ       = LUSetBL
+  ; ⊥        = ⊥₊
+  ; ⊥-least  = λ {A} → ⊥₊-elim {A}
+  ; _∨_      = _⊎₊_
+  ; ∨-mon    = λ {A} {B} {C} {D} → ⊎₊-mon {A} {B} {C} {D}
+  ; ∨-comm   = λ {A} {B} → ⊎₊-comm {A} {B}
+  ; ∨-wabsʳ  = λ {A} {B} → ⊎₊-weak {A} {A ×₊ B}
+  ; ∨-idemˡ  = λ {A} → ⊎₊-idem {A}
   }
+

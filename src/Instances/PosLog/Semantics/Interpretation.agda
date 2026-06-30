@@ -2,16 +2,16 @@
 
 open import NonDistributiveAlgebras
 
-open import Instances.MPL.System
+open import Instances.PosLog.System
 
-module Instances.MPL.Semantics.Interpretation
+module Instances.PosLog.Semantics.Interpretation
   -- Model
-  (𝒫 : MPLAlgebra)
+  (𝒜 : PosLogAlgebra)
   -- Valuation for atoms
-  (V𝕡 : Atom → 𝒫 .MPLAlgebra.Carrier)  
+  (V𝕡 : Atom → 𝒜 .PosLogAlgebra.Carrier)  
   where
 
-open MPLAlgebra 𝒫
+open PosLogAlgebra 𝒜
   renaming ( Carrier to H
            ; ⊤ to ⊤'
            ; ⊥ to ⊥'

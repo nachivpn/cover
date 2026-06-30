@@ -76,7 +76,7 @@ NS = record
   ; refinement = record { wkN = wkK₊ ; wkN-ref = wkK₊-ref }
   }
 
-LS : LatticeSystem NS
+LS : LatLogSystem NS
 LS = record
   { identity = record
     { idN[_]  = idK₊
