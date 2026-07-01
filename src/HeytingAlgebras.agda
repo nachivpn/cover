@@ -157,41 +157,19 @@ record CMAlgebra : Set₂ where
 record CKAlgebra : Set₂ where
 
   field
-    ℋ : HeytingAlgebra
+    𝒞 : CKBoxAlgebra
 
-  open HeytingAlgebra ℋ public
+  open CKBoxAlgebra 𝒞 public
 
   field
-    ◻_          : Carrier → Carrier
-    ◻-resp-≈    : {x y : Carrier} → x ≈ y → ◻ x ≈ ◻ y
     ◇_          : Carrier → Carrier
     ◇-resp-≈    : {x y : Carrier} → x ≈ y → ◇ x ≈ ◇ y
-
-    -- ◻ distributes over finite meets
-    ◻-distrib-∧      : {x y : Carrier} → ◻ (x ∧ y) ≈ ◻ x ∧ ◻ y
-    ◻-distrib-⊤-back : ⊤ ≤ ◻ ⊤
 
     -- implies monotonicity for ◇
     ◇x≤◇⟨x∨y⟩    : {x y : Carrier} → ◇ x ≤ ◇ (x ∨ y)
 
     -- enables validation of "◻ (φ → ψ) → (◇ φ → ◇ ψ)"
     ◻x∧◇y≤◇⟨x∧y⟩ : {x y : Carrier} → ◻ x ∧ ◇ y ≤ ◇ (x ∧ y)
-
-  ◻-distrib-⊤ : {x y : Carrier} → ◻ ⊤ ≈ ⊤
-  ◻-distrib-⊤ = antisym (maximum _) ◻-distrib-⊤-back
-
-  ◻-monotone : {a b : Carrier} → a ≤ b → ◻ a ≤ ◻ b
-  ◻-monotone {a} {b} i = trans ◻a≤◻a∧◻b ◻a∧◻b≤◻b
-    where
-
-      ◻a≤◻a∧◻b : ◻ a ≤ ◻ a ∧ ◻ b
-      ◻a≤◻a∧◻b = ≤-respʳ-≈ ◻a∧◻b≈◻a refl
-        where
-          a≈a∧b    = antisym (∧-greatest refl i) (x∧y≤x _ _)
-          ◻a∧◻b≈◻a = Eq.trans (◻-resp-≈ a≈a∧b) ◻-distrib-∧
-
-      ◻a∧◻b≤◻b : ◻ a ∧ ◻ b ≤ ◻ b
-      ◻a∧◻b≤◻b = x∧y≤y (◻ a) (◻ b)
 
 record GCAlgebra : Set₂ where
 
