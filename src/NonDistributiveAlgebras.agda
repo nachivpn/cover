@@ -95,6 +95,63 @@ record LatLogAlgebra : Set₂ where
       }
     }
 
+-- Positive CKBox Algebra
+record PCKBoxAlgebra : Set₂ where
+
+  field
+    ℒ : BoundedLattice
+
+  open BoundedLattice ℒ public
+
+  field
+    -- operator
+    ◻_          : Carrier → Carrier
+    ◻-resp-≈    : {x y : Carrier} → x ≈ y → ◻ x ≈ ◻ y
+
+    -- ◻ distributes over finite meets
+    ◻-distrib-∧      : {x y : Carrier} → ◻ (x ∧ y) ≈ ◻ x ∧ ◻ y
+    ◻-distrib-⊤-back : ⊤ ≤ ◻ ⊤
+
+  ◻-distrib-∧-forth : {x y : Carrier} → ◻ (x ∧ y) ≤ ◻ x ∧ ◻ y
+  ◻-distrib-∧-forth = ≤-respʳ-≈ ◻-distrib-∧ refl
+
+  ◻-distrib-∧-back : {x y : Carrier} → ◻ x ∧ ◻ y ≤ ◻ (x ∧ y)
+  ◻-distrib-∧-back = ≤-respˡ-≈ ◻-distrib-∧ refl
+
+  ◻-distrib-⊤ : {x y : Carrier} → ◻ ⊤ ≈ ⊤
+  ◻-distrib-⊤ = antisym (maximum _) ◻-distrib-⊤-back
+
+  ◻-monotone : {a b : Carrier} → a ≤ b → ◻ a ≤ ◻ b
+  ◻-monotone {a} {b} i = trans ◻a≤◻a∧◻b ◻a∧◻b≤◻b
+    where
+
+      ◻a≤◻a∧◻b : ◻ a ≤ ◻ a ∧ ◻ b
+      ◻a≤◻a∧◻b = ≤-respʳ-≈ ◻a∧◻b≈◻a refl
+        where
+          a≈a∧b    = antisym (∧-greatest refl i) (x∧y≤x _ _)
+          ◻a∧◻b≈◻a = Eq.trans (◻-resp-≈ a≈a∧b) ◻-distrib-∧
+
+      ◻a∧◻b≤◻b : ◻ a ∧ ◻ b ≤ ◻ b
+      ◻a∧◻b≤◻b = x∧y≤y (◻ a) (◻ b)
+
+-- Positive CK Algebra
+record PCKAlgebra : Set₂ where
+
+  field
+    𝒞 : PCKBoxAlgebra
+
+  open PCKBoxAlgebra 𝒞 public
+
+  field
+    ◇_          : Carrier → Carrier
+    ◇-resp-≈    : {x y : Carrier} → x ≈ y → ◇ x ≈ ◇ y
+
+    -- implies monotonicity for ◇
+    ◇x≤◇⟨x∨y⟩    : {x y : Carrier} → ◇ x ≤ ◇ (x ∨ y)
+
+    -- interaction between box and diamond
+    ◻x∧◇y≤◇⟨x∧y⟩ : {x y : Carrier} → ◻ x ∧ ◇ y ≤ ◇ (x ∧ y)
+
 module Properties where
 
   module _ (ℒ : BoundedLattice) where
