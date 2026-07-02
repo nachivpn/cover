@@ -5,6 +5,8 @@ module Instances.LatLog.System where
 
 open import Data.Nat using () renaming (ℕ to Atom) public
 
+infixr 10 _∨_ _∧_
+
 data Form : Set where
   𝕡 : Atom → Form
   ⊤ ⊥ : Form
@@ -25,6 +27,7 @@ open import Context Form public
 ---- 2. the context isn't available in the branches in ∨-E!
 ---- 3. distributivity of ∧ over ∨ isn't admissible (due to 2)
 
+infix 9 _⊢_
 data _⊢_ : Ctx → Form → Set where
 
   -- hypothesis

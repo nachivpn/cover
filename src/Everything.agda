@@ -17,6 +17,7 @@ open import USet.Positive.Localized
 
 -- Boilerplate for proof systems/calculi
 open import Context
+open import Substitution
 
 -- IPL ("Intuitionistic Propositional Logic")
 open import Instances.IPL.System
@@ -81,3 +82,4 @@ open import Instances.PosLog.Semantics.Completeness
 
 open import Instances.Maybe
 open import Instances.Err
+open import Instances.LatLog.Conversion
