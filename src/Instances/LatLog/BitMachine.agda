@@ -2,14 +2,16 @@ module Instances.LatLog.BitMachine where
 
 open import Instances.LatLog.Calculus
 
-open import Data.Bool renaming (Bool to Bit ; false to 𝟘 ; true to 𝟙)
-open import Data.Nat using (ℕ ; _+_) renaming (_⊔_ to max ; _∸_ to _-_)
+open import Data.Bool using ()
+  renaming (Bool to Bit ; false to 𝟘 ; true to 𝟙)
+open import Data.Nat
+  using (ℕ ; _+_ ; _≤_) renaming (_⊔_ to max ; _∸_ to _-_)
 open import Data.List hiding ([_])
 
 infixr 10 _⨾_
 
 data Instr : Set where
-  nop halt : Instr 
+  nop halt : Instr
   write    : Bit → Instr
   read     : Instr → Instr → Instr
   copy     : ℕ → Instr
@@ -21,34 +23,34 @@ data Instr : Set where
   _⨾_      : Instr → Instr → Instr
 
 -- maximum cells allocated
-maxAlloc : Instr → ℕ
-maxAlloc nop          = 0
-maxAlloc halt         = 0
-maxAlloc (write _)    = 0
-maxAlloc (read xs ys) = max (maxAlloc xs) (maxAlloc ys)
-maxAlloc (copy _)     = 0
-maxAlloc (skip _)     = 0
-maxAlloc (fwd _)      = 0
-maxAlloc (bwd _)      = 0
-maxAlloc (newFr n)    = n
-maxAlloc moveFr       = 0
-maxAlloc dropFr       = 0
-maxAlloc (xs ⨾ ys)    = maxAlloc xs + maxAlloc ys
+allocs : Instr → ℕ
+allocs nop          = 0
+allocs halt         = 0
+allocs (write _)    = 0
+allocs (read xs ys) = max (allocs xs) (allocs ys)
+allocs (copy _)     = 0
+allocs (skip _)     = 0
+allocs (fwd _)      = 0
+allocs (bwd _)      = 0
+allocs (newFr n)    = n
+allocs moveFr       = 0
+allocs dropFr       = 0
+allocs (xs ⨾ ys)    = allocs xs + allocs ys
 
 -- maximum cells copied
-maxCopy : Instr → ℕ
-maxCopy nop          = 0
-maxCopy halt         = 0
-maxCopy (write _)    = 0
-maxCopy (read xs ys) = max (maxCopy xs) (maxCopy ys)
-maxCopy (copy n)     = n
-maxCopy (skip _)     = 0
-maxCopy (fwd _)      = 0
-maxCopy (bwd _)      = 0
-maxCopy (newFr _)    = 0
-maxCopy moveFr       = 0
-maxCopy dropFr       = 0
-maxCopy (xs ⨾ ys)    = maxCopy xs + maxCopy ys
+copies : Instr → ℕ
+copies nop          = 0
+copies halt         = 0
+copies (write _)    = 0
+copies (read xs ys) = max (copies xs) (copies ys)
+copies (copy n)     = n
+copies (skip _)     = 0
+copies (fwd _)      = 0
+copies (bwd _)      = 0
+copies (newFr _)    = 0
+copies moveFr       = 0
+copies dropFr       = 0
+copies (xs ⨾ ys)    = copies xs + copies ys
 
 size : Ty → ℕ
 size (𝕡 x)    = x
@@ -74,7 +76,7 @@ comp n X Y
   ⨾ X
   ⨾ moveFr
   ⨾ Y
-  ⨾ dropFr 
+  ⨾ dropFr
 
 -- implementation for variables
 ⟪_⟫ᵛ : Var Γ a → Instr
@@ -107,6 +109,11 @@ comp n X Y
       (read
         (fwd (1 + padl a b) ⨾ ⟪ t ⟫ ⨾ bwd (1 + padl a b))
         (fwd (1 + padr a b) ⨾ ⟪ t' ⟫ ⨾ bwd (1 + padr a b)))
+
+distrʳ : [] `, ((a × b) ＋ (a × c)) ⊢ a × (b ＋ c)
+distrʳ = pair
+  (match x₀ (fst x₀) (fst x₀))
+  (match x₀ (inl (snd x₀)) (inr (snd x₀)))
 
 infix 9 _⊢ᵈ_
 data _⊢ᵈ_ : Ctx → Ty → Set where
