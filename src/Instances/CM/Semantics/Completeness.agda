@@ -9,6 +9,7 @@ import Instances.CM.Semantics.Interpretation as Interpretation
 open import Neighborhood.Systems 𝕎
 
 open import Function using (_∘_)
+open import Data.Empty renaming (⊥ to ⊥′ ; ⊥-elim to ⊥′-elim)
 open import Data.Sum using (inj₁ ; inj₂)
 open import Data.Product
   using (Σ ; ∃ ; ∃₂ ; _×_ ; _,_ ; -,_ ; proj₁ ; proj₂)
@@ -120,7 +121,7 @@ Tm₊ a = luset (Tm' a) (run𝒥' {Tm' a} localizeTm)
   localizeTm (dead x)         h = ⊥-E x
   localizeTm (branch x k1 k2) h = ∨-E x (localizeTm k1 (h ∘ left)) (localizeTm k2 (h ∘ right))
 
-open Interpretation ℛ (Tm₊ ∘ 𝕡) -- imports ⟦-⟧
+open Interpretation ℛ (Tm₊ ∘ 𝕡) using (⟦_⟧ ; ⟦_⟧c)
 open LUSet -- imports localize and 𝒳
 
 ---------------------
@@ -173,3 +174,17 @@ quot {Γ} {a} f = reify a .apply (f .apply (idEnv Γ))
 
 completeness : Γ ⊨ₐ a → Γ ⊢ a
 completeness f = quot (f ℛ (Tm₊ ∘ 𝕡))
+
+------------------
+-- Observations --
+------------------
+
+private
+  obs : ⋆' ⊥' →̇ 𝒥' ⊥'
+  obs .apply (k , p) = dead (aux k p) , λ { () }
+    where
+    aux : (k : K⋆ Γ) → (∀ {v} → v ∈⋆ k → ⊥′) → Γ ⊢ ⊥
+    aux (single x)       p = ⊥′-elim (p here)
+    aux (dead x)         p = x
+    aux (branch x k1 k2) p = ∨-E x (aux k1 (p ∘ left)) (aux k2 (p ∘ right))
+
