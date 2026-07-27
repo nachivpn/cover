@@ -67,14 +67,13 @@ open import Instances.LatLog.System
 open import Instances.LatLog.Semantics.Interpretation
 open import Instances.LatLog.Semantics.Soundness
 open import Instances.LatLog.Semantics.Completeness
---open import Instances.LatLog.Semantics.NbE
+open import Instances.LatLog.Semantics.NbE
 
--- PosLog ("Positive Logic")
-open import Instances.PosLog.System
-open import Instances.PosLog.Semantics.Interpretation
-open import Instances.PosLog.Semantics.Soundness
-open import Instances.PosLog.Semantics.Completeness
---open import Instances.PosLog.Semantics.NbE
+-- LatLog.WeakLatLog ("Weak Lattice Logic")
+open import Instances.LatLog.WeakLatLog.System
+open import Instances.LatLog.WeakLatLog.Semantics.Interpretation
+open import Instances.LatLog.WeakLatLog.Semantics.Soundness
+open import Instances.LatLog.WeakLatLog.Semantics.Completeness
 
 --------------------------
 -- Programming examples --

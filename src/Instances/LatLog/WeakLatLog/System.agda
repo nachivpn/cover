@@ -1,7 +1,7 @@
 {-# OPTIONS --safe --without-K #-}
 
--- Positive Logic
-module Instances.PosLog.System where
+-- Weak Lattice Logic
+module Instances.LatLog.WeakLatLog.System where
 
 open import Data.Nat using () renaming (ℕ to Atom) public
 

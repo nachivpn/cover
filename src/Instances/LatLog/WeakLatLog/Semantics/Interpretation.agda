@@ -2,16 +2,16 @@
 
 open import NonDistributiveAlgebras
 
-open import Instances.PosLog.System
+open import Instances.LatLog.WeakLatLog.System
 
-module Instances.PosLog.Semantics.Interpretation
+module Instances.LatLog.WeakLatLog.Semantics.Interpretation
   -- Model
-  (𝒜 : PosLogAlgebra)
+  (𝒜 : WeakLatLogAlgebra)
   -- Valuation for atoms
-  (V𝕡 : Atom → 𝒜 .PosLogAlgebra.Carrier)  
+  (V𝕡 : Atom → 𝒜 .WeakLatLogAlgebra.Carrier)  
   where
 
-open PosLogAlgebra 𝒜
+open WeakLatLogAlgebra 𝒜
   renaming ( Carrier to H
            ; ⊤ to ⊤'
            ; ⊥ to ⊥'

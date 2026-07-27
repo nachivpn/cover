@@ -1,14 +1,14 @@
 {-# OPTIONS --safe --without-K #-}
 
-module Instances.PosLog.Semantics.Entailment where
+module Instances.LatLog.WeakLatLog.Semantics.Entailment where
 
 open import NonDistributiveAlgebras
 
-open import Instances.PosLog.System
-import Instances.PosLog.Semantics.Interpretation as Interpretation
+open import Instances.LatLog.WeakLatLog.System
+import Instances.LatLog.WeakLatLog.Semantics.Interpretation as Interpretation
 
 -- Entailment in an algebraic model
-_⨾_⊨ₐ_ : PosLogAlgebra → Ctx → Form → Set₁
+_⨾_⊨ₐ_ : WeakLatLogAlgebra → Ctx → Form → Set₁
 𝒜 ⨾ Γ ⊨ₐ a = ∀ V𝕡 → let open Interpretation 𝒜 V𝕡 in ⟦ Γ ⟧c ≤ ⟦ a ⟧
 
 -- Entailment in all algebraic models

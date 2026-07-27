@@ -1,10 +1,10 @@
 {-# OPTIONS --safe --without-K #-}
 
-module Instances.PosLog.Semantics.Completeness where
+module Instances.LatLog.WeakLatLog.Semantics.Completeness where
 
-open import Instances.PosLog.System
-open import Instances.PosLog.Semantics.Entailment
-import Instances.PosLog.Semantics.Interpretation as Interpretation
+open import Instances.LatLog.WeakLatLog.System
+open import Instances.LatLog.WeakLatLog.Semantics.Entailment
+import Instances.LatLog.WeakLatLog.Semantics.Interpretation as Interpretation
 
 open import Function using (_∘_)
 open import Data.Sum using (_⊎_ ; inj₁ ; inj₂)
@@ -77,7 +77,7 @@ NS = record
   ; refinement = record { wkN = wkK₊ ; wkN-ref = wkK₊-ref }
   }
 
-PS : PosLogSystem NS
+PS : WeakLatLogSystem NS
 PS = record {
   transitivity = record
     { transN = transK₊
@@ -86,7 +86,7 @@ PS = record {
   }
 
 open import USet.Base 𝕎
-open import USet.Positive.Localized 𝕎 PS renaming (LUSetPosLog to ℛ)
+open import USet.Positive.Localized 𝕎 PS renaming (LUSetWeakLatLog to ℛ)
 
 ------------------------
 -- Model construction --

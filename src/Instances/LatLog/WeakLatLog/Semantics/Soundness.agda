@@ -1,22 +1,22 @@
 {-# OPTIONS --safe --without-K #-}
 
-module Instances.PosLog.Semantics.Soundness where
+module Instances.LatLog.WeakLatLog.Semantics.Soundness where
 
 open import NonDistributiveAlgebras
 
-open import Instances.PosLog.System
-open import Instances.PosLog.Semantics.Entailment
-import Instances.PosLog.Semantics.Interpretation as Interpretation
+open import Instances.LatLog.WeakLatLog.System
+open import Instances.LatLog.WeakLatLog.Semantics.Entailment
+import Instances.LatLog.WeakLatLog.Semantics.Interpretation as Interpretation
 
 module Proof
-  (𝒜 : PosLogAlgebra)
-  (open PosLogAlgebra 𝒜 using (Carrier))
+  (𝒜 : WeakLatLogAlgebra)
+  (open WeakLatLogAlgebra 𝒜 using (Carrier))
   (V𝕡 : Atom → Carrier) -- Valuation of proposition 𝕡
   where
 
   open Interpretation 𝒜 V𝕡
   
-  open PosLogAlgebra 𝒜
+  open WeakLatLogAlgebra 𝒜
     using ()
     renaming ( maximum to unit'
              ; minimum to init'

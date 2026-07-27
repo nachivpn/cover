@@ -21,8 +21,8 @@ module BoundedMeetSemilattice = LBoundedMeetSemilattice
 BoundedLattice = LBoundedLattice 1ℓ 0ℓ 0ℓ
 module BoundedLattice = LBoundedLattice
 
--- "Positive Logic" algebra
-record PosLogAlgebra : Set₂ where
+-- "Weak Lattice Logic" algebra
+record WeakLatLogAlgebra : Set₂ where
 
   field
     ℬ : BoundedMeetSemilattice
@@ -62,9 +62,9 @@ record PosLogAlgebra : Set₂ where
 record LatLogAlgebra : Set₂ where
 
   field
-    𝒫 : PosLogAlgebra
+    𝒫 : WeakLatLogAlgebra
 
-  open PosLogAlgebra 𝒫 public
+  open WeakLatLogAlgebra 𝒫 public
 
   field
     ∨-idemʳ : ∀ {x} → x ≤ x ∨ x

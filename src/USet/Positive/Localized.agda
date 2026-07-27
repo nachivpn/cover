@@ -9,7 +9,7 @@ module USet.Positive.Localized
   (let open Sys 𝕎)
   {NS : NeighborhoodSystem}
   (let open NeighborhoodSystem NS)
-  (MS : PosLogSystem NS)
+  (MS : WeakLatLogSystem NS)
   where
 
 open import Function using (id ; const ; _∘_ ; flip)
@@ -36,7 +36,7 @@ open import USet.Cover 𝕎 NS renaming
   ; map𝒞' to map𝒥'
   ; run𝒞' to run𝒥'
   ) public
-open PosLogSystem MS
+open WeakLatLogSystem MS
 
 private
   variable
@@ -176,8 +176,8 @@ private
   ⊎₊-weak : ∀ {A B} → (A ⊎₊ A) →̇₊ (A ⊎₊ B)
   ⊎₊-weak {A} = map𝒥' [ inj₁' , inj₁' ]'
 
-LUSetPosLog : PosLogAlgebra
-LUSetPosLog = record
+LUSetWeakLatLog : WeakLatLogAlgebra
+LUSetWeakLatLog = record
   { ℬ       = LUSetBL
   ; ⊥        = ⊥₊
   ; ⊥-least  = λ {A} → ⊥₊-elim {A}
