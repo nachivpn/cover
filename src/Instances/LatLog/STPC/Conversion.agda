@@ -64,17 +64,17 @@ open Conversion _≈_ ≈-is-equiv public
 -- Substitution preserves conversion --
 ---------------------------------------
 
-substVar-pres-≈ₛ : {s s' : Sub Δ Γ} (x : Var Γ a)
-  → s ≈ₛ s' → substVar s x ≈ substVar s' x
-substVar-pres-≈ₛ zero     (_ `, t≈t')
+substVar-pres-≈ˢ : {s s' : Sub Δ Γ} (x : Var Γ a)
+  → s ≈ˢ s' → substVar s x ≈ substVar s' x
+substVar-pres-≈ˢ zero     (_ `, t≈t')
   = t≈t'
-substVar-pres-≈ₛ (succ x) (s≈s' `, _)
-  = substVar-pres-≈ₛ x s≈s'
+substVar-pres-≈ˢ (succ x) (s≈s' `, _)
+  = substVar-pres-≈ˢ x s≈s'
 
 substTm-pres-≈-left : {s s' : Sub Δ Γ} (t : Tm Γ a)
-  → s ≈ₛ s' → substTm s t ≈ substTm s' t
+  → s ≈ˢ s' → substTm s t ≈ substTm s' t
 substTm-pres-≈-left (var v)         s≈s'
-  = substVar-pres-≈ₛ v s≈s'
+  = substVar-pres-≈ˢ v s≈s'
 substTm-pres-≈-left unit            s≈s'
   = ≈-refl
 substTm-pres-≈-left (fst t)         s≈s'
@@ -99,9 +99,9 @@ substTm-pres-≈-right s red-×1
 substTm-pres-≈-right s red-×2
   = red-×2
 substTm-pres-≈-right s (red-＋1 t u u')
-  = ≈-trans (red-＋1 _ _ _) (≡-to-≈ (substTm-pres-∙ₛ ([] `, t) s u))
+  = ≈-trans (red-＋1 _ _ _) (≡-to-≈ (substTm-pres-∙ˢ ([] `, t) s u))
 substTm-pres-≈-right s (red-＋2 t u u')
-  = ≈-trans (red-＋2 _ _ _) (≡-to-≈ (substTm-pres-∙ₛ ([] `, t) s u'))
+  = ≈-trans (red-＋2 _ _ _) (≡-to-≈ (substTm-pres-∙ˢ ([] `, t) s u'))
 substTm-pres-≈-right s (exp-𝟙 t)
   = exp-𝟙 (substTm s t)
 substTm-pres-≈-right s (exp-𝟘 t)
@@ -156,7 +156,7 @@ substTm-pres-≈-right s (≈-trans r r')
   = ≈-trans (substTm-pres-≈-right s r) (substTm-pres-≈-right s r')
 
 substTm-pres-≈ : {s s' : Sub Δ Γ} {t t' : Tm Γ a}
-  → s ≈ₛ s' → t ≈ t' → substTm s t ≈ substTm s' t'
+  → s ≈ˢ s' → t ≈ t' → substTm s t ≈ substTm s' t'
 substTm-pres-≈ {s' = s'} {t} s≈s' t≈t'
   = ≈-trans (substTm-pres-≈-left t s≈s') (substTm-pres-≈-right s' t≈t')
 

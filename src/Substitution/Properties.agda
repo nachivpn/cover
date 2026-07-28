@@ -33,13 +33,13 @@ trimSub-unit-left []       = refl
 trimSub-unit-left (s `, x) = cong (_`, _) (trimSub-unit-left s)
 
 -- trimSub (which is composition, really) has a right unit
-trimSub-unit-right : (w : Γ ⊑ Δ) → trimSub w idₛ ≡ embWk w
+trimSub-unit-right : (w : Γ ⊑ Δ) → trimSub w idˢ ≡ embWk w
 trimSub-unit-right base      = refl
 trimSub-unit-right (drop w)  = trans
-  (sym (trimSub-nat idₛ w freshWk))
+  (sym (trimSub-nat idˢ w freshWk))
   (cong (wkSub freshWk) (trimSub-unit-right w))
 trimSub-unit-right (keep w)  = cong (_`, var zero) (trans
-  (sym (trimSub-nat idₛ w freshWk))
+  (sym (trimSub-nat idˢ w freshWk))
   (cong (wkSub freshWk) (trimSub-unit-right w)))
 
 -- naturality of substVar
@@ -73,31 +73,31 @@ module Conversion
     ; trans to ≈-trans
     )
 
-  data _≈ₛ_ : Sub Γ Δ → Sub Γ Δ → Set where
-    []   : [] ≈ₛ [] {Γ}
-    _`,_ : {s s' : Sub Γ Δ} {t t' : Tm Γ a} → s ≈ₛ s' → t ≈ t' → (s `, t) ≈ₛ (s' `, t')
+  data _≈ˢ_ : Sub Γ Δ → Sub Γ Δ → Set where
+    []   : [] ≈ˢ [] {Γ}
+    _`,_ : {s s' : Sub Γ Δ} {t t' : Tm Γ a} → s ≈ˢ s' → t ≈ t' → (s `, t) ≈ˢ (s' `, t')
 
-  ≈ₛ-refl : Reflexive {A = Sub Γ Δ} _≈ₛ_
-  ≈ₛ-refl {x = []}     = []
-  ≈ₛ-refl {x = δ `, t} = ≈ₛ-refl `, ≈-is-equiv .≈-refl
+  ≈ˢ-refl : Reflexive {A = Sub Γ Δ} _≈ˢ_
+  ≈ˢ-refl {x = []}     = []
+  ≈ˢ-refl {x = δ `, t} = ≈ˢ-refl `, ≈-is-equiv .≈-refl
 
-  ≈ₛ-sym : Symmetric {A = Sub Γ Δ} _≈ₛ_
-  ≈ₛ-sym []             = []
-  ≈ₛ-sym (φ≋φ' `, t≈t') = (≈ₛ-sym φ≋φ') `, (≈-is-equiv .≈-sym t≈t') -- (≈ₛ-sym φ≋φ') `, ? -- ≈-sym t≈t'
+  ≈ˢ-sym : Symmetric {A = Sub Γ Δ} _≈ˢ_
+  ≈ˢ-sym []             = []
+  ≈ˢ-sym (φ≋φ' `, t≈t') = (≈ˢ-sym φ≋φ') `, (≈-is-equiv .≈-sym t≈t') -- (≈ˢ-sym φ≋φ') `, ? -- ≈-sym t≈t'
 
-  ≈ₛ-trans : Transitive {A = Sub Γ Δ} _≈ₛ_
-  ≈ₛ-trans []            ψ≋ω              = ψ≋ω
-  ≈ₛ-trans (φ≋ψ `, t≈t') (ψ≋ω `, t'≈t'')  = (≈ₛ-trans φ≋ψ ψ≋ω) `, ≈-is-equiv. ≈-trans t≈t' t'≈t''
+  ≈ˢ-trans : Transitive {A = Sub Γ Δ} _≈ˢ_
+  ≈ˢ-trans []            ψ≋ω              = ψ≋ω
+  ≈ˢ-trans (φ≋ψ `, t≈t') (ψ≋ω `, t'≈t'')  = (≈ˢ-trans φ≋ψ ψ≋ω) `, ≈-is-equiv. ≈-trans t≈t' t'≈t''
 
-  ≈ₛ-equiv : IsEquivalence {A = Sub Γ Δ} _≈ₛ_
-  ≈ₛ-equiv = record
-    { refl  = ≈ₛ-refl
-    ; sym   = ≈ₛ-sym
-    ; trans = ≈ₛ-trans
+  ≈ˢ-equiv : IsEquivalence {A = Sub Γ Δ} _≈ˢ_
+  ≈ˢ-equiv = record
+    { refl  = ≈ˢ-refl
+    ; sym   = ≈ˢ-sym
+    ; trans = ≈ˢ-trans
     }
 
-  `,-pres-≈-left : s ≈ₛ s' → (t : Tm Γ a) → (s `, t) ≈ₛ (s' `, t)
+  `,-pres-≈-left : s ≈ˢ s' → (t : Tm Γ a) → (s `, t) ≈ˢ (s' `, t)
   `,-pres-≈-left s≈s' t = s≈s' `, ≈-is-equiv .≈-refl
 
-  `,-pres-≈-right : {t t' : Tm Γ a} (s : Sub Γ Δ) → t ≈ t' → (s `, t) ≈ₛ (s `, t')
-  `,-pres-≈-right s t≈t' = ≈ₛ-refl `, t≈t'
+  `,-pres-≈-right : {t t' : Tm Γ a} (s : Sub Γ Δ) → t ≈ t' → (s `, t) ≈ˢ (s `, t')
+  `,-pres-≈-right s t≈t' = ≈ˢ-refl `, t≈t'

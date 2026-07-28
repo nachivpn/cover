@@ -51,32 +51,32 @@ module Substitution.Base
   -- NOTE: composition requires parallel substitution for terms
 
   -- "drop" the last variable in the context
-  dropₛ : Sub Γ Δ → Sub (Γ `, a) Δ
-  dropₛ s = wkSub freshWk s
+  dropˢ : Sub Γ Δ → Sub (Γ `, a) Δ
+  dropˢ s = wkSub freshWk s
 
   -- "keep" the last variable in the context
-  keepₛ : Sub Γ Δ → Sub (Γ `, a) (Δ `, a)
-  keepₛ s = dropₛ s `, var zero
+  keepˢ : Sub Γ Δ → Sub (Γ `, a) (Δ `, a)
+  keepˢ s = dropˢ s `, var zero
 
   -- embed a weakening to substitution
   embWk : Δ ⊑ Γ → Sub Γ Δ
   embWk base      = []
-  embWk (drop  w) = dropₛ  (embWk w)
-  embWk (keep  w) = keepₛ  (embWk w)
+  embWk (drop  w) = dropˢ  (embWk w)
+  embWk (keep  w) = keepˢ  (embWk w)
 
   -- identity substitution
-  idₛ : Sub Γ Γ
-  idₛ = embWk ⊑-refl
+  idˢ : Sub Γ Γ
+  idˢ = embWk ⊑-refl
 
-  idₛ[_] = λ Γ → idₛ {Γ}
+  idˢ[_] = λ Γ → idˢ {Γ}
 
   module Composition
     (substTm     : {Δ Γ : Ctx} → {a : Ty} → (σ : Sub Δ Γ) → (t : Tm Γ a) → Tm Δ a)
     where
 
-    infixr 20 _∙ₛ_
+    infixr 20 _∙ˢ_
 
     -- substitution composition
-    _∙ₛ_ : Sub Δ Γ → Sub Δ' Δ → Sub Δ' Γ
-    []        ∙ₛ s = []
-    (s' `, t) ∙ₛ s = (s' ∙ₛ s) `, substTm s t
+    _∙ˢ_ : Sub Δ Γ → Sub Δ' Δ → Sub Δ' Γ
+    []        ∙ˢ s = []
+    (s' `, t) ∙ˢ s = (s' ∙ˢ s) `, substTm s t
