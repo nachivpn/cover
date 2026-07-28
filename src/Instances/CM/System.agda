@@ -49,7 +49,7 @@ data _⊢_ : Ctx → Form → Set where
   ∨-I2  : Γ ⊢ b → Γ ⊢ (a ∨ b)
   ∨-E   : Γ ⊢ (a ∨ b) → (Γ `, a) ⊢ c → (Γ `, b) ⊢ c → Γ ⊢ c
 
-  -- strong functor
+  -- functor
   ⋆-M   : Γ ⊢ ⋆ a → ([] `, a) ⊢ b → Γ ⊢ ⋆ b
 
 wkTm : Γ ⊑ Γ' → Γ ⊢ a → Γ' ⊢ a
