@@ -13,5 +13,5 @@ module Substitution
   (wkTm        : {Γ' Γ : Ctx} → {a : Ty} → (w : Γ ⊑ Γ') → (t : Tm Γ a) → Tm Γ' a)
   where
 
-
 open import Substitution.Base Ty Tm var wkTm public
+open import Substitution.Properties Ty Tm var wkTm public

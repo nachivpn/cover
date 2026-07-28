@@ -1,6 +1,6 @@
-module Instances.LatLog.BitMachine where
+module Instances.LatLog.STPC.BitMachine where
 
-open import Instances.LatLog.Calculus
+open import Instances.LatLog.STPC.Calculus
 
 open import Data.Bool using ()
   renaming (Bool to Bit ; false to 𝟘 ; true to 𝟙)

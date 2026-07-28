@@ -81,4 +81,7 @@ open import Instances.LatLog.WeakLatLog.Semantics.Completeness
 
 open import Instances.Maybe
 open import Instances.Err
-open import Instances.LatLog.Conversion
+
+-- Simply-typed program calculus
+open import Instances.LatLog.STPC.Calculus
+open import Instances.LatLog.STPC.Conversion

@@ -8,8 +8,8 @@ module SSet.JAlgebras
   (_⊲_ : W → (W → Set) → Set)
   {𝒮 : FSPSystem _⊲_}
   (let open FSPSystem 𝒮)
-  (𝒞 : CoherentFSPSystem _⊲_ 𝒮)
-  (let open CoherentFSPSystem 𝒞)
+--  (𝒞 : CoherentFSPSystem _⊲_ 𝒮)
+--  (let open CoherentFSPSystem 𝒞)
   where
 
 open import Data.Product
@@ -27,7 +27,7 @@ private
 
 η-natural :  {X Y : SSet} (f : X →̇ Y)
   → {w : W} (x : X w) → η {Y} (f x) ≡ 𝒿 f (η x)
-η-natural f x = ⊲-iden-natural f x
+η-natural f x = ≡-sym (⊲-iden-natural f x)
 
 --
 -- J-algebras
@@ -53,6 +53,7 @@ record IsJAlgHom {X Y : LSet} (f : X →̇₊ Y) : Set where
   field
     alg-comm : {w : W} {x : 𝒥' 𝒳ˣ w}
       → f (ℓˣ x) ≡ ℓʸ (𝒥'-map f x)
+open IsJAlgHom
 
 ⊤₊isJAlg : IsJAlg ⊤₊
 ⊤₊isJAlg = record
@@ -64,11 +65,17 @@ record IsJAlgHom {X Y : LSet} (f : X →̇₊ Y) : Set where
 -- ⊥₊isJAlg .alg-unit   = {!!}
 -- ⊥₊isJAlg .alg-action = {!!}
 
+open import Data.Sum
+
 module _ {X Y : LSet} (P : IsJAlg X) (Q : IsJAlg Y) where
 
   open LSet X renaming (𝒳 to 𝒳ˣ ; localize to ℓˣ)
   open LSet Y renaming (𝒳 to 𝒳ʸ ; localize to ℓʸ)
 
-  -- ⊎₊isJAlg : IsJAlg (X ⊎₊ Y)
-  -- ⊎₊isJAlg .alg-unit   = {!!}
-  -- ⊎₊isJAlg .alg-action = {!!}
+  ⊎₊isJAlg : IsJAlg (X ⊎₊ Y)
+  ⊎₊isJAlg .alg-unit   = {!!}
+  ⊎₊isJAlg .alg-action = {!!}
+
+  
+  inj₁₊isJAlgHom : IsJAlgHom {X} {X ⊎₊ Y} (inj₁₊ {X} {Y})
+  inj₁₊isJAlgHom .alg-comm {w} {x} = {!!}
