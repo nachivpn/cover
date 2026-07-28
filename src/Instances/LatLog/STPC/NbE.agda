@@ -1,8 +1,9 @@
 {-# OPTIONS --safe --without-K #-}
 
-module Instances.LatLog.Semantics.NbE where
+module Instances.LatLog.STPC.NbE where
 
-open import Instances.LatLog.Calculus
+open import Instances.LatLog.STPC.Calculus
+
 open import Instances.LatLog.Semantics.Entailment
 import Instances.LatLog.Semantics.Interpretation as Interpretation
 import Instances.LatLog.Semantics.Soundness as Soundness
@@ -220,7 +221,7 @@ nbe t = quot (eval t)
 -- Correctness (WIP) --
 -----------------------
 
-open import Instances.LatLog.Conversion
+open import Instances.LatLog.STPC.Conversion
 
 yoga : (a : Ty) → (n : Γ ⊢Ne a)
   → embNe n ≈ embNf (reify a .apply (reflect a .apply n))

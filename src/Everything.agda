@@ -67,7 +67,6 @@ open import Instances.LatLog.System
 open import Instances.LatLog.Semantics.Interpretation
 open import Instances.LatLog.Semantics.Soundness
 open import Instances.LatLog.Semantics.Completeness
-open import Instances.LatLog.Semantics.NbE
 
 -- LatLog.WeakLatLog ("Weak Lattice Logic")
 open import Instances.LatLog.WeakLatLog.System
@@ -82,6 +81,7 @@ open import Instances.LatLog.WeakLatLog.Semantics.Completeness
 open import Instances.Maybe
 open import Instances.Err
 
--- Simply-typed program calculus
+-- Simply-typed program calculus (based on LatLog)
 open import Instances.LatLog.STPC.Calculus
 open import Instances.LatLog.STPC.Conversion
+open import Instances.LatLog.STPC.NbE
