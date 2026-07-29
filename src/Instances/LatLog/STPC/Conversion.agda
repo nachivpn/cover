@@ -6,6 +6,8 @@ open import Init
 
 open import Instances.LatLog.STPC.Calculus
 
+infix 10 _≈_
+
 data _≈_ : Tm Γ a → Tm Γ a → Set where
 
   -- reduction rules

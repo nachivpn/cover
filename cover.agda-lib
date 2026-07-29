@@ -4,5 +4,6 @@ depend:
   standard-library-2.4
   -- https://github.com/nachivpn/frames
   frames
+  agda-categories
 include :
   src
