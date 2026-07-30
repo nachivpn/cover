@@ -14,8 +14,8 @@ open import Data.Product
 open import Data.Empty
 open import Data.Sum
 
-open import Relation.Binary.Lattice.Bundles using (BoundedLattice)
-open import Relation.Binary.Lattice.Structures using (IsBoundedLattice)
+open import Relation.Binary.Lattice.Bundles using (BoundedLattice ; HeytingAlgebra)
+open import Relation.Binary.Lattice.Structures using (IsBoundedLattice ; IsHeytingAlgebra)
 open import Relation.Binary.Structures using (IsPreorder ; IsEquivalence)
 open import Level using (0ℓ ; suc) ; private 1ℓ = suc 0ℓ
 
@@ -85,7 +85,7 @@ x'-right-assoc : {A B C : SSet} → ((A ×' B) ×' C) →̇ (A ×' (B ×' C))
 x'-right-assoc ((a , b) , c) = a , (b , c)
 
 ×'-swap : {A B : SSet} → (A ×' B) →̇ (B ×' A)
-×'-swap (a , b) = b , a 
+×'-swap (a , b) = b , a
 
 _×'-map_ : {A B C D : SSet} → A →̇ C → B →̇ D → (A ×' B) →̇ (C ×' D)
 f ×'-map g = λ pr → f (pr .proj₁) , g (pr .proj₂)
@@ -164,3 +164,23 @@ SSetBL = record
   ; isBoundedLattice = SSetBLisBL
   }
 
+private
+  --
+  -- Observe that subsets also form a Heyting algebra
+  -- we just don't like them since they don't support
+  -- completeness (specifically reification)
+  --
+  _→'_ : SSet → SSet → SSet
+  A →' B = λ x → A x → B x
+
+  curry' : {G A B : SSet} → (G ×' A) →̇ B → G →̇ (A →' B)
+  curry' f g a = f (g , a)
+
+  uncurry' : {G A B : SSet} → G →̇ (A →' B) → (G ×' A) →̇ B
+  uncurry' f (g , x) = f g x
+
+  SSetHAisHA : IsHeytingAlgebra _↔̇_ _→̇_ _⊎'_ _×'_ _→'_ ⊤' ⊥'
+  SSetHAisHA = record
+    { isBoundedLattice = SSetBLisBL
+    ; exponential = λ G A B → curry' , uncurry'
+    }
