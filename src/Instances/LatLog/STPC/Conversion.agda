@@ -6,6 +6,8 @@ open import Init
 
 open import Instances.LatLog.STPC.Calculus
 
+open import Relation.Binary using (Setoid)
+
 infix 10 _≈_
 
 data _≈_ : Tm Γ a → Tm Γ a → Set where
@@ -60,7 +62,80 @@ data _≈_ : Tm Γ a → Tm Γ a → Set where
 ≈-is-equiv : {Γ : Ctx} {a : Ty} → IsEquivalence (_≈_ {Γ} {a})
 ≈-is-equiv = record { refl = ≈-refl ; sym = ≈-sym ; trans = ≈-trans }
 
+Tm-setoid : (Γ : Ctx) → (a : Ty) → Setoid _ _
+Tm-setoid Γ a = record
+  { Carrier       = Tm Γ a
+  ; _≈_           = _≈_
+  ; isEquivalence = ≈-is-equiv
+  }
+  
 open Conversion _≈_ ≈-is-equiv public
+
+------------------------------------
+-- Weakening preserves conversion --
+------------------------------------
+
+wkTm-pres-≈ : (w : Γ ⊑ Γ') {t t' : Tm Γ a}
+    → t ≈ t' → wkTm w t ≈ wkTm w t'
+wkTm-pres-≈ w red-×1
+  = red-×1
+wkTm-pres-≈ w red-×2
+  = red-×2
+wkTm-pres-≈ w (red-＋1 t u u')
+  = ≈-trans (red-＋1 (wkTm w t) u u') (≡-to-≈ (substTm-nat u ([] `, t) w))
+wkTm-pres-≈ w (red-＋2 t u u')
+  = ≈-trans (red-＋2 (wkTm w t) u u') (≡-to-≈ (substTm-nat u' ([] `, t) w))
+wkTm-pres-≈ w (exp-𝟙 t)
+  = exp-𝟙 (wkTm w t)
+wkTm-pres-≈ w (exp-𝟘 t)
+  = exp-𝟘 (wkTm w t)
+wkTm-pres-≈ w (exp-× t)
+  = exp-× (wkTm w t)
+wkTm-pres-≈ w (exp-＋ t)
+  = exp-＋ (wkTm w t)
+wkTm-pres-≈ w per-＋-𝟘
+  = per-＋-𝟘
+wkTm-pres-≈ w per-＋-×1
+  = per-＋-×1
+wkTm-pres-≈ w per-＋-×2
+  = per-＋-×2
+wkTm-pres-≈ w per-＋-＋
+  = per-＋-＋
+wkTm-pres-≈ w per-𝟘-𝟘
+  = per-𝟘-𝟘
+wkTm-pres-≈ w per-𝟘-×1
+  = per-𝟘-×1
+wkTm-pres-≈ w per-𝟘-×2
+  = per-𝟘-×2
+wkTm-pres-≈ w per-𝟘-＋
+  = per-𝟘-＋
+wkTm-pres-≈ w hoi-𝟘-＋1
+  = hoi-𝟘-＋1
+wkTm-pres-≈ w hoi-𝟘-＋2
+  = hoi-𝟘-＋2
+wkTm-pres-≈ w hoi-＋-＋1
+  = hoi-＋-＋1
+wkTm-pres-≈ w hoi-＋-＋2
+  = hoi-＋-＋2
+wkTm-pres-≈ w (con-abort t≈t')
+  = con-abort (wkTm-pres-≈ w t≈t')
+wkTm-pres-≈ w (con-pair t≈t' t≈t'')
+  = con-pair (wkTm-pres-≈ w t≈t') (wkTm-pres-≈ w t≈t'')
+wkTm-pres-≈ w (con-fst t≈t')
+  = con-fst (wkTm-pres-≈ w t≈t')
+wkTm-pres-≈ w (con-snd t≈t')
+  = con-snd (wkTm-pres-≈ w t≈t')
+wkTm-pres-≈ w (con-inl t≈t')
+  = con-inl (wkTm-pres-≈ w t≈t')
+wkTm-pres-≈ w (con-inr t≈t')
+  = con-inr (wkTm-pres-≈ w t≈t')
+wkTm-pres-≈ w (con-match t≈t' t≈t'' t≈t''')
+  = con-match (wkTm-pres-≈ w t≈t') t≈t'' t≈t'''
+wkTm-pres-≈ w ≈-refl = ≈-refl
+wkTm-pres-≈ w (≈-sym t≈t')
+  = ≈-sym (wkTm-pres-≈ w t≈t')
+wkTm-pres-≈ w (≈-trans t≈t' t≈t'')
+  = ≈-trans (wkTm-pres-≈ w t≈t') (wkTm-pres-≈ w t≈t'')
 
 ---------------------------------------
 -- Substitution preserves conversion --

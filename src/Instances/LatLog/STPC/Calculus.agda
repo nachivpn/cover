@@ -76,3 +76,25 @@ substTm-pres-∙ˢ s s' (inr t)
   = ≡-cong inr (substTm-pres-∙ˢ s s' t)
 substTm-pres-∙ˢ s s' (match t t₁ t₂)
   = ≡-cong (λ s → match s t₁ t₂) (substTm-pres-∙ˢ s s' t)
+
+
+substTm-nat : (t : Tm Γ a) (s : Sub Δ Γ) (w : Δ ⊑ Δ')
+  → substTm (wkSub w s) t ≡ wkTm w (substTm s t)
+substTm-nat (var x)     s w
+  = substVar-nat x s w
+substTm-nat unit        s w
+  = ≡-refl
+substTm-nat (abort t)   s w
+  = ≡-cong abort (substTm-nat t s w)
+substTm-nat (pair t t') s w
+  = ≡-cong₂ pair (substTm-nat t s w) (substTm-nat t' s w)
+substTm-nat (fst t)     s w
+  = ≡-cong fst (substTm-nat t s w)
+substTm-nat (snd t)     s w
+  = ≡-cong snd (substTm-nat t s w)
+substTm-nat (inl t)     s w
+  = ≡-cong inl (substTm-nat t s w)
+substTm-nat (inr t)     s w
+  = ≡-cong inr (substTm-nat t s w)
+substTm-nat (match u t₁ t₂) s w
+  = ≡-cong (λ z → match z t₁ t₂) (substTm-nat u s w)

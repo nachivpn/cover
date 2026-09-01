@@ -1,12 +1,8 @@
-----------------------
--- WORK IN PROGRESS --
-----------------------
-
 {-# OPTIONS --without-K --rewriting  #-}
 --
 -- Note:
 -- Uses `--rewriting` to avoid tedious type substitutions
--- especially that `⟦` a ⟧ ≡ a` in the term model
+-- especially that `⟦ a ⟧ ≡ a` in the term model
 --
 
 module Instances.LatLog.STPC.Semantics.Completeness where
@@ -20,6 +16,8 @@ open import Categories.Category.Cocartesian
 open import Instances.LatLog.STPC.Calculus
 open import Instances.LatLog.STPC.Conversion
 open import Instances.LatLog.STPC.Semantics.Categorical
+
+import Relation.Binary.Reasoning.Setoid as EqReasoning
 
 infix 9 _∼>_
 
@@ -209,19 +207,50 @@ open Interpretation ℳᵀ using (⟦_⟧ ; ⟦_⟧ᶜ ; evalVar ; eval)
 ⟦-⟧-is-id (a ＋ b) = ≡-cong₂ _＋_ (⟦-⟧-is-id a) (⟦-⟧-is-id b)
 
 {-# REWRITE ⟦-⟧-is-id #-}
-  
+
+-- "context term"
 ↑ᶜ : ∀ Γ → Tm Γ ⟦ Γ ⟧ᶜ
 ↑ᶜ []       = unit
 ↑ᶜ (Γ `, a) = pair (wkTm freshWk (↑ᶜ Γ)) v0ᵗ
 
 quot : (⟦ Γ ⟧ᶜ ∼> ⟦ a ⟧) → Tm Γ a
-quot {Γ} = substTm [ ↑ᶜ Γ ]ˢ
+quot {Γ} = substTm [ ↑ᶜ Γ ]ˢ    
 
-postulate
-  traceVar : (x : Var Γ a) → var x ≈ quot (evalVar x)
-  --traceVar v0       = ≈-sym red-×2
-  --traceVar (succ x) = ?
+--
+-- Every term is equivalent to its
+-- denotation in the term model
+--
 
+traceVar : (x : Var Γ a) → var x ≈ quot (evalVar x)
+traceVar v0
+  = ≈-sym red-×2
+traceVar {Γ `, b} {a} (succ {.Γ} {.a} {.b} x)
+  = let open EqReasoning (Tm-setoid _ _) in begin
+      var (succ x)
+        ≡˘⟨ ≡-cong var (wkIncr x) ⟩
+      var (wkVar freshWk x)
+        ≡⟨⟩
+      wkTm freshWk (var x)
+        ≈⟨ wkTm-pres-≈ freshWk (traceVar x) ⟩
+      wkTm freshWk (substTm [ ↑ᶜ Γ ]ˢ (evalVar x))
+        ≡˘⟨ substTm-nat (evalVar x) [ ↑ᶜ Γ ]ˢ freshWk ⟩
+      substTm
+        [ wkTm freshWk (↑ᶜ Γ) ]ˢ
+        (evalVar x)
+        ≈⟨ substTm-pres-≈-left (evalVar x) ([] `, ≈-sym red-×1) ⟩
+      substTm
+        [ fst (pair (wkTm freshWk (↑ᶜ Γ)) v0ᵗ) ]ˢ
+        (evalVar x)
+        ≡⟨⟩
+      substTm
+        ([ fst  v0ᵗ ]ˢ ∙ˢ [ pair (wkTm freshWk (↑ᶜ Γ)) v0ᵗ ]ˢ)
+        (evalVar x)
+        ≡⟨ substTm-pres-∙ˢ _ _ (evalVar x) ⟩
+      substTm
+        [ pair (wkTm freshWk (↑ᶜ Γ)) v0ᵗ ]ˢ
+        (substTm [ fst  v0ᵗ ]ˢ (evalVar x))
+      ∎
+      
 trace : (t : Tm Γ a) → t ≈ quot (eval t)
 trace (var x)    = traceVar x
 trace unit       = exp-𝟙 unit
@@ -234,6 +263,7 @@ trace (inr t)    = con-inr (trace t)
 trace (match s t₁ t₂) = con-match (trace s) (trace t₁) (trace t₂)
 
 completeness : CategoricalCompleteness
-completeness t u t⊧u = ≈-trans (trace t) (≈-trans
-  (substTm-pres-≈-right [ ↑ᶜ _ ]ˢ (t⊧u ℳᵀ))
-  (≈-sym (trace u)))
+completeness t u t⊧u = ≈-trans (trace t)
+  (≈-trans
+    (substTm-pres-≈-right [ ↑ᶜ _ ]ˢ (t⊧u ℳᵀ))
+    (≈-sym (trace u)))

@@ -51,7 +51,7 @@ data _⊢_ : Ctx → Form → Set where
 
 wkTm : Γ ⊑ Γ' → Γ ⊢ a → Γ' ⊢ a
 wkTm i (hyp x)       = hyp (wkVar i x)
-wkTm i ⊤-I           =  ⊤-I
+wkTm i ⊤-I           = ⊤-I
 wkTm i (⊥-E t)       = ⊥-E (wkTm i t)
 wkTm i (∧-I t u)     = ∧-I (wkTm i t) (wkTm i u)
 wkTm i (∧-E1 t)      = ∧-E1 (wkTm i t)

@@ -18,9 +18,11 @@ record STPCModel : Set₁ where
     𝒞-cocartesian : Cocartesian 𝒞
 
   module 𝒞 = Category 𝒞
-  open 𝒞 renaming (_≈_ to _≈'_ ; _⇒_ to _∼>_) public
-  open Cartesian 𝒞-cartesian renaming (⊤ to 𝟙' ; _×_ to _×'_) public
-  open Cocartesian 𝒞-cocartesian renaming (⊥ to 𝟘' ; _+_ to _＋'_) public
+  open 𝒞 renaming (_≈_ to _≋_ ; _⇒_ to _∼>_) public
+  open Equiv renaming (refl to ≋-refl ; sym to ≋-sym ; trans to ≋-trans) public 
+  open Cartesian 𝒞-cartesian renaming (⊤ to 𝟙' ; _×_ to _×'_ ; unique to ×'-unique) public
+  open Cocartesian 𝒞-cocartesian
+    renaming (⊥ to 𝟘' ; _+_ to _＋'_ ; +-unique to ＋'-unique ; +-η to +'-η) public
 
   field
     Vι : Atom → Obj
@@ -56,7 +58,7 @@ module Interpretation (ℳ : STPCModel) where
   eval (match s t₁ t₂) = [ eval t₁ ∘ ⟨ ! , id ⟩ , eval t₂ ∘ ⟨ ! , id ⟩ ] ∘ eval s
 
 _≈[_]_ : Tm Γ a → STPCModel → Tm Γ a → Set
-t ≈[ ℳ ] u = let open Interpretation ℳ in eval t ≈' eval u
+t ≈[ ℳ ] u = let open Interpretation ℳ in eval t ≋ eval u
 
 CategoricalSoundness : Set₁
 CategoricalSoundness = {Γ : Ctx} {a : Ty} (t u : Tm Γ a)

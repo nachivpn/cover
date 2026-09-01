@@ -42,11 +42,11 @@ private
 
 𝒲 : IFrame Ctx _⊑_
 𝒲 = record
-      { ⊑-trans           = _∙_
-      ; ⊑-trans-assoc     = ⊑-trans-assoc
-      ; ⊑-refl            = ⊑-refl
-      ; ⊑-trans-unit-left = ⊑-trans-unit-left
-      ; ⊑-trans-unit-right  = ⊑-trans-unit-right
+      { ⊑-trans            = _∙_
+      ; ⊑-trans-assoc      = ⊑-trans-assoc
+      ; ⊑-refl             = ⊑-refl
+      ; ⊑-trans-unit-left  = ⊑-trans-unit-left
+      ; ⊑-trans-unit-right = ⊑-trans-unit-right
       }
 
 wkVar-pres-⊑-refl : (x : Var Γ a) → wkVar ⊑-refl x ≡ x
