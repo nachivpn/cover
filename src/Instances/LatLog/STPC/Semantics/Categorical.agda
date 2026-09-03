@@ -84,6 +84,37 @@ module Interpretation (ℳ : STPCModel) where
   eval-resp-∘ s (inr t)     = ≋-trans (∘-resp-≈ʳ (eval-resp-∘ s t)) ∘-assoc˘
   eval-resp-∘ s (match t t₁ t₂) = ≋-trans (∘-resp-≈ʳ (eval-resp-∘ s t)) ∘-assoc˘
 
+  --
+  -- Lemmas for commuting conversions (both "permutation" and "hoisting")
+  --
+
+  -- key step: h ∘ ¡ ≋ ¡, for any h
+  comm-𝟘-lem : {G A B : Obj}
+    → (h : A ∼> B) (f : G ∼> 𝟘')
+    → h ∘ ¡ ∘ f ≋ ¡ ∘ f
+  comm-𝟘-lem h f = let open EqReasoning hom-setoid in begin
+      h ∘ ¡ ∘ f
+        ≈⟨ ∘-assoc˘ ⟩
+      (h ∘ ¡) ∘ f
+        ≈˘⟨ ∘-resp-≈ˡ (¡-unique (h ∘ ¡)) ⟩
+      ¡ ∘ f
+        ∎
+
+  -- key step: h ∘ [ x , y ]  ≋ [ h ∘ x , h ∘ y], for any h, x and y
+  comm-＋-lem : {G A₁ A₂ B C : Obj}
+    → (h : B ∼> C) (g₁ : 𝟙' ×' A₁ ∼> B) (g₂ : 𝟙' ×' A₂ ∼> B) (f : G ∼> A₁ ＋' A₂)
+    → h ∘ [ g₁ ∘ ⟨ ! , id ⟩ , g₂ ∘ ⟨ ! , id ⟩ ] ∘ f
+    ≋ [ (h ∘ g₁) ∘ ⟨ ! , id ⟩ , (h ∘ g₂) ∘ ⟨ ! , id ⟩ ] ∘ f
+  comm-＋-lem h g₁ g₂ f = let open EqReasoning hom-setoid in begin
+      h ∘ [ g₁ ∘ ⟨ ! , id ⟩ , g₂ ∘ ⟨ ! , id ⟩ ] ∘ f
+        ≈⟨ ∘-assoc˘ ⟩
+      (h ∘ [ g₁ ∘ ⟨ ! , id ⟩ , g₂ ∘ ⟨ ! , id ⟩ ]) ∘ f
+        ≈⟨ ∘-resp-≈ˡ ∘-distribˡ-[] ⟩
+      [ h ∘ g₁ ∘ ⟨ ! , id ⟩ , h ∘ g₂ ∘ ⟨ ! , id ⟩ ] ∘ f
+        ≈⟨ ∘-resp-≈ˡ ([]-cong₂ ∘-assoc˘ ∘-assoc˘) ⟩
+      [ (h ∘ g₁) ∘ ⟨ ! , id ⟩ , (h ∘ g₂) ∘ ⟨ ! , id ⟩ ] ∘ f
+        ∎
+
   eval-pres-≈ : {t u : Tm Γ a} → t ≈ u → eval t ≋ eval u
   eval-pres-≈ red-×1
     = red-×1'
@@ -142,121 +173,29 @@ module Interpretation (ℳ : STPCModel) where
       [ (i₁ ∘ π₂) ∘ ⟨ ! , id ⟩ , (i₂ ∘ π₂) ∘ ⟨ ! , id ⟩ ] ∘ eval t
         ∎
   eval-pres-≈ {t = abort (match t u u')} per-＋-𝟘
-    = let open EqReasoning hom-setoid in begin
-      ¡ ∘ [ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ] ∘ eval t
-        ≈⟨ ∘-assoc˘ ⟩
-      (¡ ∘ [ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ]) ∘ eval t
-        ≈⟨ ∘-resp-≈ˡ ∘-distribˡ-[] ⟩
-      ([ ¡ ∘ eval u ∘ ⟨ ! , id ⟩ , ¡ ∘ eval u' ∘ ⟨ ! , id ⟩ ]) ∘ eval t
-        ≈⟨ ∘-resp-≈ˡ ([]-cong₂ ∘-assoc˘ ∘-assoc˘) ⟩
-      ([ (¡ ∘ eval u) ∘ ⟨ ! , id ⟩ , (¡ ∘ eval u') ∘ ⟨ ! , id ⟩ ] ∘ eval t)
-        ∎
+    = comm-＋-lem ¡ (eval u) (eval u') (eval t)
   eval-pres-≈ {t = fst (match t u u')} per-＋-×1
-    = let open EqReasoning hom-setoid in begin
-      π₁ ∘ [ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ] ∘ eval t
-        ≈⟨ ∘-assoc˘ ⟩
-      (π₁ ∘ [ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ]) ∘ eval t
-        ≈⟨ ∘-resp-≈ˡ ∘-distribˡ-[] ⟩
-      [ π₁ ∘ eval u ∘ ⟨ ! , id ⟩ , π₁ ∘ eval u' ∘ ⟨ ! , id ⟩ ] ∘ eval t
-        ≈⟨ ∘-resp-≈ˡ ([]-cong₂ ∘-assoc˘ ∘-assoc˘) ⟩
-      [ (π₁ ∘ eval u) ∘ ⟨ ! , id ⟩ , (π₁ ∘ eval u') ∘ ⟨ ! , id ⟩ ] ∘ eval t
-        ∎
+    = comm-＋-lem π₁ (eval u) (eval u') (eval t)
   eval-pres-≈ {t = snd (match t u u')} per-＋-×2
-    = let open EqReasoning hom-setoid in begin
-      π₂ ∘ [ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ] ∘ eval t
-        ≈⟨ ∘-assoc˘ ⟩
-      (π₂ ∘ [ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ]) ∘ eval t
-        ≈⟨ ∘-resp-≈ˡ ∘-distribˡ-[] ⟩
-      [ π₂ ∘ eval u ∘ ⟨ ! , id ⟩ , π₂ ∘ eval u' ∘ ⟨ ! , id ⟩ ] ∘ eval t
-        ≈⟨ ∘-resp-≈ˡ ([]-cong₂ ∘-assoc˘ ∘-assoc˘) ⟩
-      [ (π₂ ∘ eval u) ∘ ⟨ ! , id ⟩ , (π₂ ∘ eval u') ∘ ⟨ ! , id ⟩ ] ∘ eval t
-        ∎
+    = comm-＋-lem π₂ (eval u) (eval u') (eval t)
   eval-pres-≈ {t = match (match t t₁ t₂) u u'} per-＋-＋
-    = let open EqReasoning hom-setoid in begin
-      [ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ]
-      ∘ [ eval t₁ ∘ ⟨ ! , id ⟩ , eval t₂ ∘ ⟨ ! , id ⟩ ]
-      ∘ eval t
-        ≈⟨ ∘-assoc˘ ⟩
-      ([ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ]
-      ∘ [ eval t₁ ∘ ⟨ ! , id ⟩ , eval t₂ ∘ ⟨ ! , id ⟩ ])
-      ∘ eval t
-        ≈⟨ ∘-resp-≈ˡ ∘-distribˡ-[] ⟩
-      [ [ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ] ∘ eval t₁ ∘ ⟨ ! , id ⟩
-      , [ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ] ∘ eval t₂ ∘ ⟨ ! , id ⟩ ]
-      ∘ eval t
-        ≈⟨ ∘-resp-≈ˡ ([]-cong₂ ∘-assoc˘ ∘-assoc˘) ⟩
-      [ ([ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ] ∘ eval t₁) ∘ ⟨ ! , id ⟩
-      , ([ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ] ∘ eval t₂) ∘ ⟨ ! , id ⟩ ]
-      ∘ eval t
-        ∎
+    = comm-＋-lem [ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ] (eval t₁) (eval t₂) (eval t)
   eval-pres-≈ {t = abort (abort t)} per-𝟘-𝟘
-    = let open EqReasoning hom-setoid in begin
-      ¡ ∘ ¡ ∘ eval t
-        ≈⟨ ∘-assoc˘ ⟩
-      (¡ ∘ ¡) ∘ eval t
-        ≈˘⟨ ∘-resp-≈ˡ (¡-unique (¡ ∘ ¡)) ⟩
-      ¡ ∘ eval t
-        ∎
+    = comm-𝟘-lem ¡ (eval t)
   eval-pres-≈ {t = fst (abort t)} per-𝟘-×1
-   = let open EqReasoning hom-setoid in begin
-      π₁ ∘ ¡ ∘ eval t
-        ≈⟨ ∘-assoc˘ ⟩
-      (π₁ ∘ ¡) ∘ eval t
-        ≈˘⟨ ∘-resp-≈ˡ (¡-unique (π₁ ∘ ¡)) ⟩
-      ¡ ∘ eval t
-        ∎
+   = comm-𝟘-lem π₁ (eval t)
   eval-pres-≈ {t = snd (abort t)} per-𝟘-×2
-    = let open EqReasoning hom-setoid in begin
-      π₂ ∘ ¡ ∘ eval t
-        ≈⟨ ∘-assoc˘ ⟩
-      (π₂ ∘ ¡) ∘ eval t
-        ≈˘⟨ ∘-resp-≈ˡ (¡-unique (π₂ ∘ ¡)) ⟩
-      ¡ ∘ eval t
-        ∎
+    = comm-𝟘-lem π₂ (eval t)
   eval-pres-≈ {t = match (abort t) u u'} per-𝟘-＋
-    = let open EqReasoning hom-setoid in begin
-      [ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ] ∘ ¡ ∘ eval t
-        ≈⟨ ∘-assoc˘ ⟩
-      ([ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ] ∘ ¡) ∘ eval t
-        ≈˘⟨ ∘-resp-≈ˡ (¡-unique ([ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ] ∘ ¡)) ⟩
-      ¡ ∘ eval t
-        ∎
+    = comm-𝟘-lem [ eval u ∘ ⟨ ! , id ⟩ , eval u' ∘ ⟨ ! , id ⟩ ] (eval t)
   eval-pres-≈ {t = inl (abort t)} hoi-𝟘-＋1
-    = let open EqReasoning hom-setoid in begin
-      i₁ ∘ ¡ ∘ eval t
-        ≈⟨ ∘-assoc˘ ⟩
-      (i₁ ∘ ¡) ∘ eval t
-        ≈˘⟨ ∘-resp-≈ˡ (¡-unique (i₁ ∘ ¡)) ⟩
-      ¡ ∘ eval t
-        ∎
+    = comm-𝟘-lem i₁ (eval t)
   eval-pres-≈ {t = inr (abort t)} hoi-𝟘-＋2
-    = let open EqReasoning hom-setoid in begin
-      i₂ ∘ ¡ ∘ eval t
-        ≈⟨ ∘-assoc˘ ⟩
-      (i₂ ∘ ¡) ∘ eval t
-        ≈˘⟨ ∘-resp-≈ˡ (¡-unique (i₂ ∘ ¡)) ⟩
-      ¡ ∘ eval t
-        ∎
+    = comm-𝟘-lem i₂ (eval t)
   eval-pres-≈ {t = inl (match t t₁ t₂)} hoi-＋-＋1
-    = let open EqReasoning hom-setoid in begin
-      i₁ ∘ [ eval t₁ ∘ ⟨ ! , id ⟩ , eval t₂ ∘ ⟨ ! , id ⟩ ] ∘ eval t
-        ≈⟨ ∘-assoc˘ ⟩
-      (i₁ ∘ [ eval t₁ ∘ ⟨ ! , id ⟩ , eval t₂ ∘ ⟨ ! , id ⟩ ]) ∘ eval t
-        ≈⟨ ∘-resp-≈ˡ ∘-distribˡ-[] ⟩
-      [ i₁ ∘ eval t₁ ∘ ⟨ ! , id ⟩ , i₁ ∘ eval t₂ ∘ ⟨ ! , id ⟩ ] ∘ eval t
-        ≈⟨ ∘-resp-≈ˡ ([]-cong₂ ∘-assoc˘ ∘-assoc˘) ⟩
-      [ (i₁ ∘ eval t₁) ∘ ⟨ ! , id ⟩ , (i₁ ∘ eval t₂) ∘ ⟨ ! , id ⟩ ] ∘ eval t
-        ∎
+    = comm-＋-lem i₁ (eval t₁) (eval t₂) (eval t)
   eval-pres-≈ {t = inr (match t t₁ t₂)} hoi-＋-＋2
-    = let open EqReasoning hom-setoid in begin
-      i₂ ∘ [ eval t₁ ∘ ⟨ ! , id ⟩ , eval t₂ ∘ ⟨ ! , id ⟩ ] ∘ eval t
-        ≈⟨ ∘-assoc˘ ⟩
-      (i₂ ∘ [ eval t₁ ∘ ⟨ ! , id ⟩ , eval t₂ ∘ ⟨ ! , id ⟩ ]) ∘ eval t
-        ≈⟨ ∘-resp-≈ˡ ∘-distribˡ-[] ⟩
-      [ i₂ ∘ eval t₁ ∘ ⟨ ! , id ⟩ , i₂ ∘ eval t₂ ∘ ⟨ ! , id ⟩ ] ∘ eval t
-        ≈⟨ ∘-resp-≈ˡ ([]-cong₂ ∘-assoc˘ ∘-assoc˘) ⟩
-      [ (i₂ ∘ eval t₁) ∘ ⟨ ! , id ⟩ , (i₂ ∘ eval t₂) ∘ ⟨ ! , id ⟩ ] ∘ eval t
-        ∎
+    = comm-＋-lem i₂ (eval t₁) (eval t₂) (eval t)
   eval-pres-≈ (con-abort t≈u)
     = ∘-resp-≈ʳ (eval-pres-≈ t≈u)
   eval-pres-≈ (con-pair t≈u t'≈u')
@@ -293,5 +232,4 @@ soundness = λ t u t≈u ℳ → let open Interpretation ℳ in eval-pres-≈ t�
 
 CategoricalCompleteness : Set₁
 CategoricalCompleteness = {Γ : Ctx} {a : Ty} (t u : Tm Γ a)
-  → (∀ ℳ → t ≈[ ℳ ] u)
-  → t ≈ u
+  → (∀ ℳ → t ≈[ ℳ ] u) → t ≈ u
