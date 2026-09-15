@@ -44,6 +44,13 @@ open import Instances.CKBox.Semantics.Soundness
 open import Instances.CKBox.Semantics.Completeness
 open import Instances.CKBox.Semantics.NbE
 
+-- CS4Box ("Box-only Constructive K logic")
+open import Instances.CS4Box.System
+open import Instances.CS4Box.Semantics.Interpretation
+open import Instances.CS4Box.Semantics.Soundness
+open import Instances.CS4Box.Semantics.Completeness
+--open import Instances.CS4Box.Semantics.NbE
+
 -- SL ("Minimal lax logic with axiom S")
 open import Instances.SL.System
 open import Instances.SL.Semantics.Interpretation
