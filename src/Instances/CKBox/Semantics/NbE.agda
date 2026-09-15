@@ -365,10 +365,10 @@ reflect : ∀ a → Ne' a →̇ ⟦ a ⟧ .𝒳
 
 reify (𝕡 i)   = id'
 reify ⊤       = fun (λ _ → ⊤-I)
-reify ⊥       = Nf₊ ⊥ .localize ∘' map𝒥' (⊥'-elim {Nf' ⊥})
+reify ⊥       = Nf₊ ⊥ .localize ∘' 𝒥'-map (⊥'-elim {Nf' ⊥})
 reify (a ⇒ b) = fun λ f → ⇒-I (reify b .apply (f (⊑-refl , freshWk) (reflect a .apply (hyp zero))))
 reify (a ∧ b) = fun λ x → ∧-I (reify a .apply (proj₁ x)) (reify b .apply (proj₂ x))
-reify (a ∨ b) = Nf₊ (a ∨ b) .localize ∘' map𝒥' [ ∨-I1' ∘' reify a  , ∨-I2' ∘' reify b ]'
+reify (a ∨ b) = Nf₊ (a ∨ b) .localize ∘' 𝒥'-map [ ∨-I1' ∘' reify a  , ∨-I2' ∘' reify b ]'
 reify (◻ a)   = ◻'-collect ∘' ◻'-map (reify a)
 
 reflect (𝕡 i)   = emb'

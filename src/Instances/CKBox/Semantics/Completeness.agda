@@ -317,10 +317,10 @@ reflect : ∀ a → Tm' a →̇ ⟦ a ⟧ .𝒳
 
 reify (𝕡 i)   = id'
 reify ⊤       = fun (λ _ → ⊤-I)
-reify ⊥       = Tm₊ ⊥ .localize ∘' map𝒥' (⊥'-elim {Tm' ⊥})
+reify ⊥       = Tm₊ ⊥ .localize ∘' 𝒥'-map (⊥'-elim {Tm' ⊥})
 reify (a ⇒ b) = fun λ f → ⇒-I (reify b .apply (f (⊑-refl , freshWk) (reflect a .apply (hyp zero))))
 reify (a ∧ b) = fun λ x → ∧-I (reify a .apply (proj₁ x)) (reify b .apply (proj₂ x))
-reify (a ∨ b) = Tm₊ (a ∨ b) .localize ∘' map𝒥' [ ∨-I1' ∘' reify a  , ∨-I2' ∘' reify b ]'
+reify (a ∨ b) = Tm₊ (a ∨ b) .localize ∘' 𝒥'-map [ ∨-I1' ∘' reify a  , ∨-I2' ∘' reify b ]'
 reify (◻ a)   = ◻'-collect ∘' ◻'-map (reify a)
 
 reflect (𝕡 i)   = id'
@@ -346,9 +346,9 @@ idEnv (Δ , Γ) = idEnvL Δ Γ , idEnvR Δ Γ
   where
 
   idEnvL : ∀ Δ Γ → (◻₊ ⟦ Δ ⟧c) .𝒳 ₀ (Δ , Γ)
-  idEnvL []       Γ = single [] Γ , λ x → _
-  idEnvL (Δ `, a) Γ = ◻'-pair {A = ⟦ Δ ⟧c .𝒳} {B = ⟦ a ⟧ .𝒳} proj₁' proj₂' .apply
-    (wk₊ (◻₊ ⟦ Δ ⟧c) freshWkL₂ (idEnvL Δ Γ)
+  idEnvL []       Γ = ◻'-distrib-⊤'-back .apply _
+  idEnvL (Δ `, a) Γ = ◻'-distrib-×'-back {A = ⟦ Δ ⟧c .𝒳} {B = ⟦ a ⟧ .𝒳}  .apply
+    ( wk₊ (◻₊ ⟦ Δ ⟧c) freshWkL₂ (idEnvL Δ Γ)
     , ◻-I' {A = ⟦ a ⟧ .𝒳} (reflect a .apply (hyp zero)))
 
   idEnvR : ∀ Δ Γ → ⟦ Γ ⟧c .𝒳 ₀ (Δ , Γ)

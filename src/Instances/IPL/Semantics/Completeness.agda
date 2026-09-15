@@ -57,8 +57,8 @@ reify (𝕡 i)   = id'
 reify ⊤       = fun (λ _ → ⊤-I)
 reify (a ⇒ b) = fun λ x → ⇒-I (reify b .apply (x freshWk (reflect a .apply (hyp zero))))
 reify (a ∧ b) = fun λ x → ∧-I (reify a .apply (proj₁ x)) (reify b .apply (proj₂ x))
-reify ⊥       = Tm₊ ⊥ .localize ∘' map𝒥' (⊥'-elim {Tm' ⊥})
-reify (a ∨ b) = Tm₊ (a ∨ b) .localize ∘' map𝒥' [ ∨-I1' ∘' reify a  , ∨-I2' ∘' reify b ]'
+reify ⊥       = Tm₊ ⊥ .localize ∘' 𝒥'-map (⊥'-elim {Tm' ⊥})
+reify (a ∨ b) = Tm₊ (a ∨ b) .localize ∘' 𝒥'-map [ ∨-I1' ∘' reify a  , ∨-I2' ∘' reify b ]'
 
 reflect (𝕡 i)   = id'
 reflect ⊤       = unit'

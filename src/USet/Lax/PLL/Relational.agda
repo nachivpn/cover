@@ -128,7 +128,7 @@ module RelationalCover
     ◇'-localize[_] : (A : USet) → 𝒥' (◇' A) →̇ ◇' (𝒥' A)
     ◇'-localize[_] A = ⟨R⟩'-to-◇' {𝒥' A}
       ∘' (R-localize[ A ]
-      ∘' map𝒥' (◇'-to-⟨R⟩' {A}))
+      ∘' 𝒥'-map (◇'-to-⟨R⟩' {A}))
 
     open LocalizedCover CS₊ (λ {A} → ◇'-localize[ A ]) public
 

@@ -80,6 +80,9 @@ module Return (WINF : WeakIdentity) where
   return' : {G A : USet} → G →̇ A → G →̇ 𝒞' A
   return' = point' ∘'_
 
+  𝒞'-distrib-⊤'-back : ⊤' →̇ 𝒞' ⊤'
+  𝒞'-distrib-⊤'-back = point'
+
 -- Idempotent (Goldblatt10)
 module Join (WTNF : WeakTransitivity) where
   open WeakTransitivity WTNF
@@ -142,11 +145,32 @@ module ⊤'-distr (SNF : Seriality) where
   nec' : {G A : USet} → ⊤' →̇ A → G →̇ 𝒞' A
   nec' f = map𝒞' f ∘' unit𝒞'
 
-module CKBoxCover (CKS : CKBoxModalSystem NS) where
+module Extract (CINF : WeakCoIdentity) where
 
-  open CKBoxModalSystem CKS
-  
+  open WeakCoIdentity CINF
+
+  extract' : {A : USet} → 𝒞' A →̇ A
+  extract' {A} .apply (n , h) = let (w , p , i) = N-ref n in wk A i (h p)
+
+module Duplicate (WDNF : WeakDensity) where
+
+  open WeakDensity WDNF
+
+  duplicate' : {A : USet} → 𝒞' A →̇ 𝒞' (𝒞' A)
+  duplicate' {A} .apply (n , h) = n , λ p → (denseN n p) , λ q → wk A (denseN-ref p q) (h p)
+
+module CKBoxCover (CKBS : CKBoxModalSystem NS) where
+
+  open CKBoxModalSystem CKBS
+
   open ×'-distr intclosed public
   open ⊤'-distr seriality public
-  
 
+module CS4BoxCover (CS4BS : CS4BoxModalSystem NS) where
+
+  open CS4BoxModalSystem CS4BS
+
+  open CKBoxCover ckBoxModalSytem public
+
+  open Extract coidentity public
+  open Duplicate density public

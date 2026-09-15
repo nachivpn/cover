@@ -35,8 +35,9 @@ open import Level using (0ℓ ; suc) ; private 1ℓ = suc 0ℓ
 open import USet.Base 𝕎
 open import USet.Cover 𝕎 NS renaming
   ( 𝒞' to 𝒥'
-  ; map𝒞' to map𝒥'
+  ; map𝒞' to 𝒥'-map
   ; run𝒞' to run𝒥'
+  ; 𝒞'-distrib-×'-forth to 𝒥'-distrib-×'-forth
   ) public 
 
 private
@@ -45,7 +46,10 @@ private
 
 open StrongMonad CS
   renaming ( point' to 𝒥'-point
+           ; return' to 𝒥'-return
            ; join' to 𝒥'-join
+           ; 𝒞'-distrib-×'-back to 𝒥'-distrib-×'-back
+           ; 𝒞'-distrib-⊤'-back to 𝒥'-distrib-⊤'-back
            )
   public
 
@@ -76,11 +80,12 @@ wk₊ X = wk (X .𝒳)
 -- Entailment
 --
 
+infix 19 _→̇₊_
+
 _→̇₊_ : LUSet → LUSet → Set
 X →̇₊ Y = X .𝒳 →̇ Y .𝒳
 
 →̇₊-refl = id'
-
 →̇₊-trans : {A B C : LUSet} → A →̇₊ B → B →̇₊ C → A →̇₊ C
 →̇₊-trans = flip _∘'_
 
@@ -99,7 +104,7 @@ _×₊_ : LUSet → LUSet → LUSet
 luset A lA ×₊ luset B lB = luset (A ×' B) localize-×'
   where
   localize-×' : 𝒥' (A ×' B) →̇ (A ×' B)
-  localize-×' = (lA ×'-map lB) ∘' 𝒞'-distrib-×'-forth {A} {B}
+  localize-×' = (lA ×'-map lB) ∘' 𝒥'-distrib-×'-forth {A} {B}
 
 --
 -- Implication/Exponential
@@ -110,7 +115,7 @@ luset A lA →₊ luset B lB = luset (A →' B) localize-→'
   where
   localize-→' : 𝒥' (A →' B) →̇ (A →' B)
   localize-→' = lam' (lB
-    ∘' (map𝒥' {(A →' B) ×' A} {B} eval'
+    ∘' (𝒥'-map {(A →' B) ×' A} {B} eval'
     ∘' swapped-strength' {A →' B} {A}))
 
 --
@@ -121,7 +126,7 @@ luset A lA →₊ luset B lB = luset (A →' B) localize-→'
 ⊥₊ = FromUSet ⊥'
 
 ⊥₊-elim : {X : LUSet} → ⊥₊ →̇₊ X
-⊥₊-elim {X} = X .localize ∘' map𝒥' {⊥'} {X .𝒳} ⊥'-elim
+⊥₊-elim {X} = X .localize ∘' 𝒥'-map {⊥'} {X .𝒳} ⊥'-elim
 
 --
 -- Disjunction
@@ -131,13 +136,13 @@ _⊎₊_ : LUSet → LUSet → LUSet
 luset A _ ⊎₊ luset B _  = FromUSet (A ⊎' B)
 
 inj₁₊ : {X Y : LUSet} → X →̇₊ (X ⊎₊ Y)
-inj₁₊ {X} {Y} = return' {X .𝒳} {X .𝒳 ⊎' Y .𝒳} inj₁'
+inj₁₊ {X} {Y} = 𝒥'-return {X .𝒳} {X .𝒳 ⊎' Y .𝒳} inj₁'
 
 inj₂₊ : {X Y : LUSet} → Y →̇₊ (X ⊎₊ Y)
-inj₂₊ {X} {Y} = return' {Y .𝒳} {X .𝒳 ⊎' Y .𝒳} inj₂'
+inj₂₊ {X} {Y} = 𝒥'-return {Y .𝒳} {X .𝒳 ⊎' Y .𝒳} inj₂'
 
 [_,_]₊ : {X Y Z : LUSet} →  X →̇₊ Z → Y →̇₊ Z → (X ⊎₊ Y) →̇₊ Z
-[_,_]₊ {X} {Y} {Z} f g = Z .localize ∘' map𝒥' {X .𝒳 ⊎' Y .𝒳} {Z .𝒳} [ f , g ]'
+[_,_]₊ {X} {Y} {Z} f g = Z .localize ∘' 𝒥'-map {X .𝒳 ⊎' Y .𝒳} {Z .𝒳} [ f , g ]'
 
 --
 -- Distributivity (of conjunction over disjunction)
@@ -145,14 +150,14 @@ inj₂₊ {X} {Y} = return' {Y .𝒳} {X .𝒳 ⊎' Y .𝒳} inj₂'
 
 ×₊-distr-⊎₊-forth : {X Y Z : LUSet} → (X ×₊ (Y ⊎₊ Z)) →̇₊ ((X ×₊ Y) ⊎₊ (X ×₊ Z))
 ×₊-distr-⊎₊-forth {luset A lA} {luset B lB} {luset C lC} =
-  map𝒥' {A ×' (B ⊎' C)} {(A ×' B) ⊎' (A ×' C)}  ×'-distr-⊎'-forth
+  𝒥'-map {A ×' (B ⊎' C)} {(A ×' B) ⊎' (A ×' C)}  ×'-distr-⊎'-forth
   ∘' strength' {A} {B ⊎' C}
 
 ×₊-distr-⊎₊-back : {X Y Z : LUSet} → ((X ×₊ Y) ⊎₊ (X ×₊ Z)) →̇₊ (X ×₊ (Y ⊎₊ Z))
 ×₊-distr-⊎₊-back X@{luset A lA} Y@{luset B lB} Z@{luset C lC} =
   (X ×₊ (Y ⊎₊ Z)) .localize
-  ∘' (map𝒥' {(A ×' B) ⊎' (A ×' C)} {A ×' 𝒥' (B ⊎' C)}
-            ((id' ×'-map return' id')
+  ∘' (𝒥'-map {(A ×' B) ⊎' (A ×' C)} {A ×' 𝒥' (B ⊎' C)}
+            ((id' ×'-map 𝒥'-return id')
             ∘' ×'-distr-⊎'-back))
 
 -- Note: observe the "localize after map𝒥" pattern
