@@ -6,7 +6,8 @@ private
     a b c d : Ty
 
 infix  5 _⊑_
-infixl 5 _,,_
+infixl 19 _,,_
+infixl 19 _`,_
 
 -----------
 -- Contexts
