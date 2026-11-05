@@ -1,6 +1,6 @@
 {-# OPTIONS --safe --without-K #-}
 
-module Instances.LatLog.STPC.Semantics.Categorical where
+module Instances.LatLog.STPC.Strong.Semantics.Categorical where
 
 open import Init
 
@@ -8,7 +8,7 @@ open import Categories.Category.Cartesian
 open import Categories.Category.Cocartesian
 
 open import Instances.LatLog.STPC.Calculus
-open import Instances.LatLog.STPC.Conversion
+open import Instances.LatLog.STPC.Strong.Conversion
 
 import Relation.Binary.Reasoning.Setoid as EqReasoning
 

@@ -5,7 +5,7 @@
 -- especially that `⟦ a ⟧ ≡ a` in the term model
 --
 
-module Instances.LatLog.STPC.Semantics.Completeness where
+module Instances.LatLog.STPC.Strong.Semantics.Completeness where
 
 open import Init
 {-# BUILTIN REWRITE _≡_ #-}
@@ -14,8 +14,8 @@ open import Categories.Category.Cartesian
 open import Categories.Category.Cocartesian
     
 open import Instances.LatLog.STPC.Calculus
-open import Instances.LatLog.STPC.Conversion
-open import Instances.LatLog.STPC.Semantics.Categorical
+open import Instances.LatLog.STPC.Strong.Conversion
+open import Instances.LatLog.STPC.Strong.Semantics.Categorical
 
 import Relation.Binary.Reasoning.Setoid as EqReasoning
 

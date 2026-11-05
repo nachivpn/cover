@@ -90,6 +90,6 @@ open import Instances.Err
 
 -- Simply-typed program calculus (based on LatLog)
 open import Instances.LatLog.STPC.Calculus
-open import Instances.LatLog.STPC.Conversion
-open import Instances.LatLog.STPC.Semantics.Categorical
+open import Instances.LatLog.STPC.Strong.Conversion
+open import Instances.LatLog.STPC.Strong.Semantics.Categorical
 open import Instances.LatLog.STPC.NbE

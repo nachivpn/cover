@@ -8,4 +8,4 @@ open import EverythingSafe
 --
 -- Uses `--rewriting` extension
 --
-open import Instances.LatLog.STPC.Semantics.Completeness
+open import Instances.LatLog.STPC.Strong.Semantics.Completeness

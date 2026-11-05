@@ -1,6 +1,6 @@
 {-# OPTIONS --safe --without-K #-}
 
-module Instances.LatLog.STPC.Conversion where
+module Instances.LatLog.STPC.Strong.Conversion where
 
 open import Init
 

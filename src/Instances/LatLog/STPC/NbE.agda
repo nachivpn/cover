@@ -221,7 +221,7 @@ nbe t = quot (eval t)
 -- Correctness (WIP) --
 -----------------------
 
-open import Instances.LatLog.STPC.Conversion
+open import Instances.LatLog.STPC.Strong.Conversion
 
 yoga : (a : Ty) → (n : Γ ⊢Ne a)
   → embNe n ≈ embNf (reify a .apply (reflect a .apply n))
