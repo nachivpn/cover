@@ -92,4 +92,6 @@ open import Instances.Err
 open import Instances.LatLog.STPC.Calculus
 open import Instances.LatLog.STPC.Strong.Conversion
 open import Instances.LatLog.STPC.Strong.Semantics.Categorical
-open import Instances.LatLog.STPC.NbE
+
+open import Instances.LatLog.STPC.Moderate.Conversion
+open import Instances.LatLog.STPC.Moderate.NbE

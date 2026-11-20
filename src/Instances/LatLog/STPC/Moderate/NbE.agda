@@ -1,6 +1,6 @@
 {-# OPTIONS --safe --without-K #-}
 
-module Instances.LatLog.STPC.NbE where
+module Instances.LatLog.STPC.Moderate.NbE where
 
 open import Instances.LatLog.STPC.Calculus
 
