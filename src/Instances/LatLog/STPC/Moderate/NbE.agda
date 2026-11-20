@@ -217,21 +217,3 @@ eval t = ⟦-⟧-sound t
 nbe : Γ ⊢ a → Γ ⊢Nf a
 nbe t = quot (eval t)
 
------------------------
--- Correctness (WIP) --
------------------------
-
-open import Instances.LatLog.STPC.Strong.Conversion
-
-yoga : (a : Ty) → (n : Γ ⊢Ne a)
-  → embNe n ≈ embNf (reify a .apply (reflect a .apply n))
-yoga (𝕡 x) n   = ≈-refl
-yoga 𝟙 n       = exp-𝟙 (embNe n)
-yoga 𝟘 n       = exp-𝟘 (embNe n)
-yoga (a × b) n = ≈-trans
-  (exp-× (embNe n))
-  (con-pair (yoga a (fst n)) (yoga b (snd n)))
-yoga (a ＋ b) n = ≈-trans
-  (exp-＋ (embNe n))
-  (con-match ≈-refl (con-inl (yoga a (var zero)))
-  (con-inr (yoga b (var zero))))
